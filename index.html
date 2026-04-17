@@ -1,0 +1,1134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lark Base — AI Work OS for Every Business</title>
+
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lenis@1.1.18/dist/lenis.min.js"></script>
+
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { background: #000; }
+html.lenis, html.lenis body { height: auto; }
+.lenis.lenis-smooth { scroll-behavior: auto !important; }
+.lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
+.lenis.lenis-stopped { overflow: clip; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif;
+  color: white;
+  background: #000;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+}
+
+.scroll-driver {
+  height: 400vh;
+  pointer-events: none;
+}
+
+.stage {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  perspective: 1200px;
+}
+
+/* ── Nav ── */
+.nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 40px;
+  background: rgba(10,10,18,0.72);
+  border-bottom: 0.5px solid rgba(255,255,255,0.08);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  transition:
+    background 0.55s cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 0.55s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.nav.light {
+  background: rgba(255,255,255,0.72);
+  border-bottom-color: rgba(0,0,0,0.06);
+}
+.nav-left { display: flex; align-items: center; gap: 9px; }
+.nav-logo {
+  width: 28px; height: 28px; border-radius: 7px;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 10px rgba(99,102,241,0.45);
+}
+.nav-diamond {
+  width: 11px; height: 11px;
+  background: white;
+  transform: rotate(45deg);
+  border-radius: 2px;
+}
+.nav-brand {
+  font-size: 15px; font-weight: 600;
+  color: white;
+  transition: color 0.55s ease;
+  letter-spacing: -0.2px;
+}
+.nav.light .nav-brand { color: #111; }
+.nav-links { display: flex; gap: 26px; }
+.nav-links span {
+  font-size: 13px;
+  color: rgba(255,255,255,0.55);
+  transition: color 0.55s ease;
+  cursor: pointer;
+}
+.nav-links span:hover { color: white; }
+.nav.light .nav-links span { color: rgba(0,0,0,0.55); }
+.nav.light .nav-links span:hover { color: #111; }
+.nav-actions { display: flex; gap: 8px; align-items: center; }
+.btn-try {
+  background: #6366f1; color: white;
+  font-size: 13px; padding: 8px 18px;
+  border-radius: 22px; font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 4px 12px rgba(99,102,241,0.25);
+}
+.btn-try:hover {
+  background: #4f46e5; transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(99,102,241,0.4);
+}
+.btn-contact {
+  border: 0.5px solid rgba(255,255,255,0.25);
+  color: rgba(255,255,255,0);
+  font-size: 13px; padding: 8px 18px;
+  border-radius: 22px;
+  opacity: 0;
+  cursor: pointer;
+  transition: opacity 0.4s ease 0.1s, border-color 0.4s ease, color 0.4s ease;
+}
+.nav.light .btn-contact {
+  opacity: 1;
+  border-color: rgba(0,0,0,0.15);
+  color: #333;
+}
+
+/* ── Section common ── */
+.sec {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 100vh;
+  overflow: hidden;
+  will-change: transform, filter, opacity, border-radius;
+  transform-origin: center center;
+  backface-visibility: hidden;
+}
+.sec-inner {
+  position: absolute;
+  inset: 0;
+  padding: 88px 40px 32px;
+  display: flex; flex-direction: column;
+}
+
+/* ── Section 1: Hero (dark) ── */
+.s1 { z-index: 1; background: #0a0a12; }
+.s1::before {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 800px 400px at 50% 20%, rgba(99,102,241,0.18), transparent),
+    radial-gradient(ellipse 600px 300px at 80% 80%, rgba(139,92,246,0.1), transparent);
+  pointer-events: none;
+}
+.s1-body {
+  flex: 1;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 20px;
+  position: relative;
+  max-width: 1100px;
+  margin: 0 auto;
+  width: 100%;
+}
+.s1-eyebrow {
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  color: rgba(255,255,255,0.45);
+  text-transform: uppercase;
+  font-weight: 500;
+  display: flex; align-items: center; gap: 8px;
+}
+.s1-eyebrow::before, .s1-eyebrow::after {
+  content: ''; width: 24px; height: 1px;
+  background: rgba(255,255,255,0.15);
+}
+.s1-title {
+  font-size: 58px; font-weight: 700;
+  color: white; text-align: center;
+  line-height: 1.08; letter-spacing: -1.5px;
+}
+.s1-title em {
+  background: linear-gradient(135deg, #818cf8 0%, #c084fc 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-style: normal;
+}
+.s1-sub {
+  font-size: 16px; color: rgba(255,255,255,0.55);
+  text-align: center;
+  max-width: 540px;
+  line-height: 1.5;
+}
+.s1-input-row {
+  display: flex; align-items: center;
+  background: rgba(255,255,255,0.06);
+  border: 0.5px solid rgba(255,255,255,0.14);
+  border-radius: 32px; padding: 8px 8px 8px 22px;
+  gap: 10px; width: 460px;
+  max-width: 100%;
+  backdrop-filter: blur(8px);
+}
+.s1-input-row span { font-size: 14px; color: rgba(255,255,255,0.4); flex: 1; }
+.s1-input-btn {
+  background: #6366f1; color: white;
+  font-size: 13px; padding: 9px 18px;
+  border-radius: 22px; white-space: nowrap;
+  font-weight: 500; cursor: pointer;
+  transition: background 0.2s;
+}
+.s1-input-btn:hover { background: #4f46e5; }
+.s1-cards {
+  display: grid; grid-template-columns: 1fr 1fr 1fr;
+  gap: 14px; width: 100%; margin-top: 10px;
+}
+.s1-card {
+  background: rgba(255,255,255,0.04);
+  border: 0.5px solid rgba(255,255,255,0.08);
+  border-radius: 14px; padding: 16px;
+  transition: background 0.25s, border-color 0.25s, transform 0.25s;
+}
+.s1-card:hover {
+  background: rgba(255,255,255,0.06);
+  border-color: rgba(255,255,255,0.15);
+  transform: translateY(-2px);
+}
+.s1-card-img {
+  width: 100%; height: 72px; border-radius: 8px;
+  background: rgba(255,255,255,0.05);
+  margin-bottom: 12px;
+  display: flex; align-items: flex-end;
+  padding: 8px; gap: 4px;
+}
+.s1-card-img div { border-radius: 3px 3px 0 0; background: rgba(99,102,241,0.55); flex: 1; }
+.s1-card-title { font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.85); margin-bottom: 4px; }
+.s1-card-desc { font-size: 12px; color: rgba(255,255,255,0.38); line-height: 1.5; }
+.s1-logos {
+  display: flex; align-items: center; justify-content: center;
+  gap: 28px; padding: 16px 0 0;
+  border-top: 0.5px solid rgba(255,255,255,0.05);
+  margin-top: 16px;
+}
+.s1-logos .label {
+  font-size: 10px; color: rgba(255,255,255,0.3);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+.s1-logos span.logo {
+  font-size: 11px; color: rgba(255,255,255,0.22);
+  font-weight: 700; letter-spacing: 0.04em;
+}
+.scroll-hint {
+  position: absolute; bottom: 20px; left: 50%;
+  transform: translateX(-50%);
+  display: flex; flex-direction: column;
+  align-items: center; gap: 6px;
+  font-size: 10.5px; color: rgba(255,255,255,0.38);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+.scroll-hint::after {
+  content: ''; width: 1px; height: 24px;
+  background: linear-gradient(to bottom, rgba(255,255,255,0.4), transparent);
+  animation: hint-pulse 2s ease-in-out infinite;
+}
+@keyframes hint-pulse {
+  0%, 100% { opacity: 0.4; transform: scaleY(0.6); }
+  50%      { opacity: 1; transform: scaleY(1); }
+}
+
+/* ── Section 2: Products (light) ── */
+.s2 {
+  z-index: 2;
+  background: #f7f7f4;
+  color: #111;
+}
+.s2-body {
+  flex: 1;
+  display: flex; flex-direction: column;
+  justify-content: center;
+  gap: 28px;
+  max-width: 1100px; margin: 0 auto; width: 100%;
+}
+.s2-head { text-align: center; }
+.s2-heading {
+  font-size: 40px; font-weight: 700; color: #111;
+  margin-bottom: 10px; letter-spacing: -1px;
+  line-height: 1.15;
+}
+.s2-sub {
+  font-size: 15px; color: rgba(0,0,0,0.5);
+  line-height: 1.5;
+}
+.s2-layout {
+  display: grid; grid-template-columns: 240px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+.s2-sidebar { display: flex; flex-direction: column; gap: 4px; }
+.s2-tab {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px; border-radius: 10px;
+  font-size: 13px; color: rgba(0,0,0,0.5);
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.s2-tab:hover { color: #111; }
+.s2-tab.active {
+  background: white; color: #111; font-weight: 500;
+  border: 0.5px solid rgba(0,0,0,0.07);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+.s2-tab-icon {
+  width: 18px; height: 18px; border-radius: 4px;
+  background: rgba(0,0,0,0.08); flex-shrink: 0;
+}
+.s2-tab.active .s2-tab-icon {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+}
+.s2-preview {
+  background: white; border-radius: 14px;
+  border: 0.5px solid rgba(0,0,0,0.06);
+  overflow: hidden;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.06);
+}
+.s2-preview-top {
+  background: linear-gradient(135deg, #eef2ff 0%, #f5f3ff 100%);
+  padding: 18px 22px;
+  display: flex; gap: 14px; align-items: center;
+  border-bottom: 0.5px solid rgba(0,0,0,0.04);
+}
+.s2-preview-icon {
+  width: 36px; height: 36px; border-radius: 9px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  box-shadow: 0 3px 10px rgba(99,102,241,0.3);
+}
+.s2-preview-meta { flex: 1; }
+.s2-preview-title { font-size: 13px; font-weight: 600; color: #111; margin-bottom: 3px; }
+.s2-preview-subtitle { font-size: 11px; color: rgba(0,0,0,0.5); }
+.s2-preview-icons { display: flex; gap: 6px; }
+.s2-preview-icon-sm { width: 28px; height: 28px; border-radius: 6px; background: rgba(99,102,241,0.16); }
+.s2-preview-body { padding: 22px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+.s2-stat { font-size: 24px; font-weight: 700; color: #111; letter-spacing: -0.4px; }
+.s2-stat-label { font-size: 11px; color: rgba(0,0,0,0.45); margin-top: 2px; }
+.s2-stat-delta { font-size: 11px; color: #16a34a; font-weight: 500; margin-top: 6px; display: inline-flex; align-items: center; gap: 3px; }
+.s2-chart-wrap {
+  grid-column: 1 / -1;
+  background: #fafafa; border-radius: 10px;
+  padding: 16px; margin-top: 4px;
+  border: 0.5px solid rgba(0,0,0,0.04);
+}
+.s2-chart-label { font-size: 11px; color: rgba(0,0,0,0.45); margin-bottom: 10px; display: flex; justify-content: space-between; }
+.s2-chart { display: flex; align-items: flex-end; gap: 6px; height: 90px; }
+.s2-bar { border-radius: 3px 3px 0 0; background: #6366f1; opacity: 0.55; flex: 1; transition: opacity 0.3s; }
+.s2-bar.hi { opacity: 1; }
+
+.s2-features {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 14px;
+}
+.s2-feature {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  padding: 16px 18px;
+  background: white;
+  border: 0.5px solid rgba(0,0,0,0.06);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.025);
+  transition: transform 0.25s cubic-bezier(0.22,1,0.36,1), box-shadow 0.25s;
+}
+.s2-feature:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+}
+.s2-feature-icon {
+  width: 38px; height: 38px; border-radius: 10px;
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  position: relative;
+}
+.s2-feature-icon.i1 { background: linear-gradient(135deg, rgba(99,102,241,0.14), rgba(139,92,246,0.14)); }
+.s2-feature-icon.i2 { background: linear-gradient(135deg, rgba(34,211,238,0.14), rgba(99,102,241,0.14)); }
+.s2-feature-icon.i3 { background: linear-gradient(135deg, rgba(168,85,247,0.14), rgba(236,72,153,0.14)); }
+.s2-feature-icon svg { width: 20px; height: 20px; }
+.s2-feature-title { font-size: 13px; font-weight: 600; color: #111; letter-spacing: -0.1px; }
+.s2-feature-desc { font-size: 11px; color: rgba(0,0,0,0.5); margin-top: 3px; line-height: 1.4; }
+
+/* ── Section 3: Use cases (dark) ── */
+.s3 {
+  z-index: 3;
+  background: #0a0a12;
+  color: white;
+}
+.s3::before {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 700px 400px at 20% 10%, rgba(139,92,246,0.14), transparent),
+    radial-gradient(ellipse 600px 300px at 90% 90%, rgba(99,102,241,0.12), transparent);
+  pointer-events: none;
+}
+.s3-body {
+  flex: 1;
+  display: flex; flex-direction: column;
+  max-width: 1150px; margin: 0 auto; width: 100%;
+  position: relative;
+}
+.s3-heading-row {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  margin-bottom: 36px; gap: 40px;
+}
+.s3-heading {
+  font-size: 40px; font-weight: 700;
+  color: white; letter-spacing: -1px;
+  line-height: 1.15;
+  max-width: 640px;
+}
+.s3-heading em {
+  font-style: normal;
+  background: linear-gradient(135deg, #818cf8, #c084fc);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.s3-sub {
+  font-size: 14px; color: rgba(255,255,255,0.55);
+  max-width: 340px; line-height: 1.6;
+}
+.s3-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 18px; flex: 1;
+}
+.s3-card {
+  background: rgba(255,255,255,0.03);
+  border: 0.5px solid rgba(255,255,255,0.08);
+  border-radius: 16px; padding: 24px;
+  display: flex; flex-direction: column;
+  gap: 14px;
+  transition: background 0.25s, border-color 0.25s, transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  cursor: pointer;
+  will-change: transform;
+}
+.s3-card:hover {
+  background: rgba(255,255,255,0.05);
+  border-color: rgba(255,255,255,0.15);
+  transform: translateY(-3px);
+}
+.s3-card-head {
+  display: flex; align-items: center; gap: 10px;
+}
+.s3-card-tag {
+  font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase;
+  color: rgba(255,255,255,0.45); font-weight: 600;
+}
+.s3-card-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: #6366f1;
+}
+.s3-card-title {
+  font-size: 18px; font-weight: 600;
+  color: white; letter-spacing: -0.3px;
+}
+.s3-card-desc {
+  font-size: 13px; color: rgba(255,255,255,0.5);
+  line-height: 1.55;
+}
+.s3-card-preview {
+  flex: 1;
+  background: rgba(0,0,0,0.25);
+  border-radius: 10px;
+  border: 0.5px solid rgba(255,255,255,0.05);
+  padding: 14px;
+  min-height: 130px;
+  display: flex; flex-direction: column;
+  gap: 8px;
+}
+
+.pipeline-cols { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 6px; flex: 1; }
+.pipeline-col { background: rgba(255,255,255,0.03); border-radius: 6px; padding: 6px; }
+.pipeline-col-label { font-size: 9px; color: rgba(255,255,255,0.4); margin-bottom: 6px; font-weight: 500; }
+.pipeline-card {
+  background: rgba(99,102,241,0.18);
+  border: 0.5px solid rgba(99,102,241,0.3);
+  border-radius: 4px; height: 14px; margin-bottom: 4px;
+}
+.pipeline-card.dim { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.07); }
+
+.gantt-row { display: flex; align-items: center; gap: 8px; height: 16px; }
+.gantt-label { font-size: 9px; color: rgba(255,255,255,0.4); width: 40px; }
+.gantt-track { flex: 1; height: 8px; background: rgba(255,255,255,0.04); border-radius: 3px; position: relative; }
+.gantt-bar { position: absolute; height: 100%; border-radius: 3px; background: linear-gradient(90deg, #6366f1, #8b5cf6); }
+
+.okr-row { display: flex; align-items: center; gap: 10px; }
+.okr-label { font-size: 10px; color: rgba(255,255,255,0.55); flex: 1; font-weight: 500; }
+.okr-progress { flex: 1; height: 6px; background: rgba(255,255,255,0.07); border-radius: 3px; overflow: hidden; }
+.okr-progress-fill { height: 100%; background: linear-gradient(90deg, #6366f1, #a78bfa); border-radius: 3px; }
+.okr-value { font-size: 10px; color: rgba(255,255,255,0.65); width: 32px; text-align: right; font-variant-numeric: tabular-nums; }
+
+.tbl-row { display: flex; align-items: center; gap: 10px; padding: 4px 0; border-bottom: 0.5px solid rgba(255,255,255,0.04); }
+.tbl-row:last-child { border-bottom: none; }
+.tbl-row.head .tbl-cell { color: rgba(255,255,255,0.4); font-weight: 500; }
+.tbl-cell { font-size: 10px; color: rgba(255,255,255,0.7); }
+.tbl-cell.name { flex: 2; }
+.tbl-cell.role { flex: 2; color: rgba(255,255,255,0.45); }
+.tbl-cell.status { flex: 1.4; }
+.tbl-avatar { width: 14px; height: 14px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #8b5cf6); display: inline-block; vertical-align: middle; margin-right: 5px; }
+.tbl-pill {
+  display: inline-block; font-size: 9px; padding: 2px 7px;
+  border-radius: 20px; font-weight: 500;
+}
+.tbl-pill.g { background: rgba(34,197,94,0.12); color: #4ade80; }
+.tbl-pill.y { background: rgba(234,179,8,0.12); color: #facc15; }
+.tbl-pill.b { background: rgba(99,102,241,0.15); color: #a5b4fc; }
+
+/* ── Section 4: CTA (light) ── */
+.s4 {
+  z-index: 4;
+  background: linear-gradient(180deg, #f7f7f4 0%, #ffffff 40%, #f0f0ff 100%);
+  color: #111;
+}
+.s4::before {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 900px 400px at 50% 70%, rgba(99,102,241,0.1), transparent);
+  pointer-events: none;
+}
+.s4-body {
+  flex: 1;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  max-width: 900px; margin: 0 auto; width: 100%;
+  text-align: center;
+  gap: 28px;
+  position: relative;
+}
+.s4-eyebrow {
+  font-size: 12px; letter-spacing: 0.1em;
+  color: #6366f1; text-transform: uppercase;
+  font-weight: 600;
+  padding: 6px 14px;
+  background: rgba(99,102,241,0.08);
+  border-radius: 20px;
+  border: 0.5px solid rgba(99,102,241,0.15);
+}
+.s4-heading {
+  font-size: 64px; font-weight: 700;
+  color: #111; letter-spacing: -2px;
+  line-height: 1.05;
+}
+.s4-heading em {
+  font-style: normal;
+  background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.s4-sub {
+  font-size: 17px; color: rgba(0,0,0,0.55);
+  max-width: 560px; line-height: 1.5;
+}
+.s4-actions {
+  display: flex; gap: 12px; margin-top: 8px;
+}
+.s4-btn-primary {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  color: white;
+  font-size: 15px; padding: 14px 32px;
+  border-radius: 30px; font-weight: 500;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(99,102,241,0.35);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.s4-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(99,102,241,0.45);
+}
+.s4-btn-secondary {
+  background: rgba(0,0,0,0.04);
+  color: #111;
+  font-size: 15px; padding: 14px 28px;
+  border-radius: 30px; font-weight: 500;
+  cursor: pointer;
+  border: 0.5px solid rgba(0,0,0,0.1);
+  transition: background 0.2s;
+}
+.s4-btn-secondary:hover { background: rgba(0,0,0,0.07); }
+.s4-fine {
+  font-size: 12px; color: rgba(0,0,0,0.4);
+  margin-top: 2px;
+}
+.s4-stats {
+  display: flex; gap: 0;
+  margin-top: 8px;
+  padding: 24px 0 0;
+  border-top: 0.5px solid rgba(0,0,0,0.08);
+  width: 100%;
+  max-width: 640px;
+}
+.s4-stat {
+  flex: 1;
+  display: flex; flex-direction: column;
+  gap: 4px;
+  position: relative;
+}
+.s4-stat + .s4-stat::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 50%;
+  transform: translateY(-50%);
+  width: 0.5px; height: 32px;
+  background: rgba(0,0,0,0.1);
+}
+.s4-stat-num {
+  font-size: 28px; font-weight: 700;
+  letter-spacing: -0.8px;
+  background: linear-gradient(135deg, #6366f1, #a855f7);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.s4-stat-label {
+  font-size: 11px; color: rgba(0,0,0,0.45);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 500;
+}
+
+/* ── Pagination rail ── */
+.pagination {
+  position: fixed;
+  right: 28px; top: 50%;
+  transform: translateY(-50%);
+  z-index: 50;
+  display: flex; flex-direction: column;
+  gap: 14px;
+}
+.page-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: rgba(255,255,255,0.22);
+  cursor: pointer;
+  transition: background 0.4s ease, transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  border: none;
+  padding: 0;
+  position: relative;
+}
+.page-dot::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 1px solid transparent;
+  transition: border-color 0.4s ease;
+}
+.page-dot.on {
+  background: #6366f1;
+  transform: scale(1.15);
+}
+.page-dot.on::after {
+  border-color: rgba(99,102,241,0.45);
+}
+.nav.light ~ .pagination .page-dot { background: rgba(0,0,0,0.18); }
+.nav.light ~ .pagination .page-dot.on { background: #6366f1; }
+
+@media (max-height: 760px) {
+  .s1-title { font-size: 44px; }
+  .s2-heading { font-size: 32px; }
+  .s3-heading { font-size: 32px; }
+  .s4-heading { font-size: 48px; }
+  .sec-inner { padding-top: 80px; padding-bottom: 24px; }
+}
+@media (max-width: 900px) {
+  .nav-links { display: none; }
+  .nav { padding: 14px 20px; }
+  .sec-inner { padding: 76px 20px 24px; }
+  .s1-title { font-size: 38px; }
+  .s2-heading, .s3-heading { font-size: 28px; }
+  .s4-heading { font-size: 40px; }
+  .s1-cards, .s3-grid { grid-template-columns: 1fr; }
+  .s2-layout { grid-template-columns: 1fr; }
+  .s2-sidebar { flex-direction: row; overflow-x: auto; }
+  .s3-heading-row { flex-direction: column; align-items: flex-start; gap: 16px; }
+}
+</style>
+</head>
+<body>
+
+<nav class="nav" id="nav">
+  <div class="nav-left">
+    <div class="nav-logo"><div class="nav-diamond"></div></div>
+    <span class="nav-brand">Lark Base</span>
+  </div>
+  <div class="nav-links">
+    <span>Base AI</span><span>Product</span><span>Solutions</span><span>Resources</span><span>Marketplace</span><span>Pricing</span>
+  </div>
+  <div class="nav-actions">
+    <span class="btn-contact">Contact Us</span>
+    <span class="btn-try">Try for free</span>
+  </div>
+</nav>
+
+<div class="stage">
+
+  <section class="sec s1" id="s1">
+    <div class="sec-inner">
+      <div class="s1-body">
+        <div class="s1-eyebrow" data-intro>Lark Base · Powered by AI</div>
+        <div class="s1-title" data-intro><em>AI Work OS</em><br>for Every Business</div>
+        <div class="s1-sub" data-intro>Build. Run. Scale. The AI system right where you work — unifying data, workflows, and your team in one place.</div>
+        <div class="s1-input-row" data-intro>
+          <span>Build a project system to track progress</span>
+          <div class="s1-input-btn">Try for free</div>
+        </div>
+        <div class="s1-cards" data-intro>
+          <div class="s1-card">
+            <div class="s1-card-img">
+              <div style="height:45%"></div><div style="height:70%"></div><div style="height:55%"></div><div style="height:85%"></div><div style="height:65%"></div>
+            </div>
+            <div class="s1-card-title">AI Workflow Generation</div>
+            <div class="s1-card-desc">Build complex workflows in one step—no setup required.</div>
+          </div>
+          <div class="s1-card">
+            <div class="s1-card-img" style="background:rgba(139,92,246,0.12);align-items:center;justify-content:center">
+              <div style="width:40px;height:16px;border-radius:4px;background:rgba(139,92,246,0.7);font-size:9px;color:white;display:flex;align-items:center;justify-content:center;margin-right:6px;font-weight:600">AI</div>
+              <div style="width:40px;height:10px;border-radius:3px;background:rgba(255,255,255,0.12)"></div>
+            </div>
+            <div class="s1-card-title">AI Formula Generation</div>
+            <div class="s1-card-desc">Turn calculations into data insights with AI.</div>
+          </div>
+          <div class="s1-card">
+            <div class="s1-card-img" style="background:rgba(14,165,233,0.08);align-items:center;justify-content:center;gap:8px">
+              <div style="width:22px;height:22px;border-radius:50%;background:rgba(99,102,241,0.75)"></div>
+              <div style="display:flex;flex-direction:column;gap:4px">
+                <div style="width:32px;height:5px;border-radius:2px;background:rgba(255,255,255,0.18)"></div>
+                <div style="width:24px;height:5px;border-radius:2px;background:rgba(255,255,255,0.1)"></div>
+              </div>
+            </div>
+            <div class="s1-card-title">Workflow AI Agent Node</div>
+            <div class="s1-card-desc">Plan, decide and take action—always on track.</div>
+          </div>
+        </div>
+        <div class="s1-logos" data-intro>
+          <span class="label">Trusted by</span>
+          <span class="logo">MI</span><span class="logo">POP MART</span><span class="logo">ZUS</span><span class="logo">atome</span><span class="logo">STOREHUB</span><span class="logo">Anker</span><span class="logo">glints</span>
+        </div>
+      </div>
+      <div class="scroll-hint">Scroll</div>
+    </div>
+  </section>
+
+  <section class="sec s2" id="s2">
+    <div class="sec-inner">
+      <div class="s2-body">
+        <div class="s2-head" data-reveal>
+          <div class="s2-heading">Built for every kind of work</div>
+          <div class="s2-sub">From dashboards and workflows to forms and views — manage every part of your work in one place.</div>
+        </div>
+        <div class="s2-layout">
+          <div class="s2-sidebar" data-reveal>
+            <div class="s2-tab active"><div class="s2-tab-icon"></div>App Modes</div>
+            <div class="s2-tab"><div class="s2-tab-icon"></div>Database</div>
+            <div class="s2-tab"><div class="s2-tab-icon"></div>Views</div>
+            <div class="s2-tab"><div class="s2-tab-icon"></div>Workflows</div>
+            <div class="s2-tab"><div class="s2-tab-icon"></div>Dashboards</div>
+            <div class="s2-tab"><div class="s2-tab-icon"></div>Permissions</div>
+          </div>
+          <div class="s2-preview" data-reveal>
+            <div class="s2-preview-top">
+              <div class="s2-preview-icon"></div>
+              <div class="s2-preview-meta">
+                <div class="s2-preview-title">Sales Performance</div>
+                <div class="s2-preview-subtitle">Real-time sync · Auto-aggregate · AI insights</div>
+              </div>
+              <div class="s2-preview-icons">
+                <div class="s2-preview-icon-sm"></div>
+                <div class="s2-preview-icon-sm"></div>
+                <div class="s2-preview-icon-sm"></div>
+              </div>
+            </div>
+            <div class="s2-preview-body">
+              <div>
+                <div class="s2-stat">$7.58M</div>
+                <div class="s2-stat-label">Monthly Revenue</div>
+                <div class="s2-stat-delta">↑ 12.4%</div>
+              </div>
+              <div>
+                <div class="s2-stat">1,284</div>
+                <div class="s2-stat-label">New Orders</div>
+                <div class="s2-stat-delta">↑ 8.2%</div>
+              </div>
+              <div>
+                <div class="s2-stat">94.7%</div>
+                <div class="s2-stat-label">Target Achieved</div>
+                <div class="s2-stat-delta">↑ 3.1%</div>
+              </div>
+              <div class="s2-chart-wrap">
+                <div class="s2-chart-label"><span>Last 8 weeks</span><span style="color:#6366f1">● Revenue</span></div>
+                <div class="s2-chart">
+                  <div class="s2-bar" style="height:38%"></div>
+                  <div class="s2-bar" style="height:52%"></div>
+                  <div class="s2-bar" style="height:44%"></div>
+                  <div class="s2-bar" style="height:68%"></div>
+                  <div class="s2-bar" style="height:58%"></div>
+                  <div class="s2-bar hi" style="height:88%"></div>
+                  <div class="s2-bar" style="height:72%"></div>
+                  <div class="s2-bar" style="height:78%"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="s2-features" data-reveal>
+          <div class="s2-feature">
+            <div class="s2-feature-icon i1">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+            </div>
+            <div>
+              <div class="s2-feature-title">500+ Templates</div>
+              <div class="s2-feature-desc">Jumpstart from proven patterns</div>
+            </div>
+          </div>
+          <div class="s2-feature">
+            <div class="s2-feature-icon i2">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#0891b2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+            </div>
+            <div>
+              <div class="s2-feature-title">100+ Integrations</div>
+              <div class="s2-feature-desc">Connect the tools you already use</div>
+            </div>
+          </div>
+          <div class="s2-feature">
+            <div class="s2-feature-icon i3">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+            </div>
+            <div>
+              <div class="s2-feature-title">Enterprise-Ready</div>
+              <div class="s2-feature-desc">SOC 2 · GDPR · Row-level ACL</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec s3" id="s3">
+    <div class="sec-inner">
+      <div class="s3-body">
+        <div class="s3-heading-row">
+          <div class="s3-heading" data-reveal>Built for how <em>real teams</em> actually work.</div>
+          <div class="s3-sub" data-reveal>From sales pipelines to OKR tracking, Base adapts to your workflow — not the other way around. Four of the most-loved starting points:</div>
+        </div>
+        <div class="s3-grid">
+          <div class="s3-card" data-reveal>
+            <div class="s3-card-head"><span class="s3-card-dot"></span><span class="s3-card-tag">Sales &amp; CRM</span></div>
+            <div class="s3-card-title">Pipeline that closes itself</div>
+            <div class="s3-card-desc">AI triages leads, drafts follow-ups, and updates stage as deals move — so reps sell.</div>
+            <div class="s3-card-preview">
+              <div class="pipeline-cols">
+                <div class="pipeline-col">
+                  <div class="pipeline-col-label">New</div>
+                  <div class="pipeline-card"></div>
+                  <div class="pipeline-card"></div>
+                  <div class="pipeline-card dim"></div>
+                </div>
+                <div class="pipeline-col">
+                  <div class="pipeline-col-label">Qualified</div>
+                  <div class="pipeline-card"></div>
+                  <div class="pipeline-card"></div>
+                </div>
+                <div class="pipeline-col">
+                  <div class="pipeline-col-label">Proposal</div>
+                  <div class="pipeline-card"></div>
+                </div>
+                <div class="pipeline-col">
+                  <div class="pipeline-col-label">Won</div>
+                  <div class="pipeline-card"></div>
+                  <div class="pipeline-card"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="s3-card" data-reveal>
+            <div class="s3-card-head"><span class="s3-card-dot" style="background:#a855f7"></span><span class="s3-card-tag">Project Management</span></div>
+            <div class="s3-card-title">One timeline, every team</div>
+            <div class="s3-card-desc">Gantt, Kanban, and calendar views of the same data. Switch perspectives without switching tools.</div>
+            <div class="s3-card-preview" style="justify-content:center;gap:10px">
+              <div class="gantt-row">
+                <div class="gantt-label">Design</div>
+                <div class="gantt-track"><div class="gantt-bar" style="left:0%;width:35%"></div></div>
+              </div>
+              <div class="gantt-row">
+                <div class="gantt-label">Build</div>
+                <div class="gantt-track"><div class="gantt-bar" style="left:20%;width:50%"></div></div>
+              </div>
+              <div class="gantt-row">
+                <div class="gantt-label">QA</div>
+                <div class="gantt-track"><div class="gantt-bar" style="left:55%;width:28%"></div></div>
+              </div>
+              <div class="gantt-row">
+                <div class="gantt-label">Launch</div>
+                <div class="gantt-track"><div class="gantt-bar" style="left:78%;width:18%"></div></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="s3-card" data-reveal>
+            <div class="s3-card-head"><span class="s3-card-dot" style="background:#22d3ee"></span><span class="s3-card-tag">OKRs &amp; Goals</span></div>
+            <div class="s3-card-title">Goals that stay alive</div>
+            <div class="s3-card-desc">Key results roll up from your actual work — no more stale quarterly spreadsheets.</div>
+            <div class="s3-card-preview" style="justify-content:center;gap:14px">
+              <div class="okr-row">
+                <div class="okr-label">Grow ARR to $50M</div>
+                <div class="okr-progress"><div class="okr-progress-fill" style="width:72%"></div></div>
+                <div class="okr-value">72%</div>
+              </div>
+              <div class="okr-row">
+                <div class="okr-label">Ship 4 major releases</div>
+                <div class="okr-progress"><div class="okr-progress-fill" style="width:50%"></div></div>
+                <div class="okr-value">50%</div>
+              </div>
+              <div class="okr-row">
+                <div class="okr-label">Raise NPS to 60+</div>
+                <div class="okr-progress"><div class="okr-progress-fill" style="width:88%"></div></div>
+                <div class="okr-value">88%</div>
+              </div>
+              <div class="okr-row">
+                <div class="okr-label">Open 2 new markets</div>
+                <div class="okr-progress"><div class="okr-progress-fill" style="width:40%"></div></div>
+                <div class="okr-value">40%</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="s3-card" data-reveal>
+            <div class="s3-card-head"><span class="s3-card-dot" style="background:#f59e0b"></span><span class="s3-card-tag">HR &amp; Recruiting</span></div>
+            <div class="s3-card-title">From applicant to onboarded</div>
+            <div class="s3-card-desc">Structured pipelines for every role, with AI-generated interview notes and scorecards.</div>
+            <div class="s3-card-preview" style="justify-content:flex-start;padding-top:8px">
+              <div class="tbl-row head">
+                <div class="tbl-cell name">Candidate</div>
+                <div class="tbl-cell role">Role</div>
+                <div class="tbl-cell status">Stage</div>
+              </div>
+              <div class="tbl-row">
+                <div class="tbl-cell name"><span class="tbl-avatar"></span>Maya Chen</div>
+                <div class="tbl-cell role">Sr. PM</div>
+                <div class="tbl-cell status"><span class="tbl-pill g">Offer</span></div>
+              </div>
+              <div class="tbl-row">
+                <div class="tbl-cell name"><span class="tbl-avatar" style="background:linear-gradient(135deg,#f59e0b,#ef4444)"></span>Aman Khan</div>
+                <div class="tbl-cell role">Eng Mgr</div>
+                <div class="tbl-cell status"><span class="tbl-pill y">On-site</span></div>
+              </div>
+              <div class="tbl-row">
+                <div class="tbl-cell name"><span class="tbl-avatar" style="background:linear-gradient(135deg,#22d3ee,#3b82f6)"></span>Lin Wei</div>
+                <div class="tbl-cell role">Designer</div>
+                <div class="tbl-cell status"><span class="tbl-pill b">Screening</span></div>
+              </div>
+              <div class="tbl-row">
+                <div class="tbl-cell name"><span class="tbl-avatar" style="background:linear-gradient(135deg,#a855f7,#ec4899)"></span>Priya N.</div>
+                <div class="tbl-cell role">Data Sci</div>
+                <div class="tbl-cell status"><span class="tbl-pill b">Screening</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec s4" id="s4">
+    <div class="sec-inner">
+      <div class="s4-body">
+        <div class="s4-eyebrow" data-reveal>Get Started Free</div>
+        <div class="s4-heading" data-reveal>Ready to build<br>your <em>Work OS?</em></div>
+        <div class="s4-sub" data-reveal>Join 10,000+ teams already running sales, ops, and product on Lark Base. No credit card required.</div>
+        <div class="s4-actions" data-reveal>
+          <div class="s4-btn-primary">Start building free</div>
+          <div class="s4-btn-secondary">Talk to sales</div>
+        </div>
+        <div class="s4-fine" data-reveal>14-day free trial · No credit card · Cancel anytime</div>
+        <div class="s4-stats" data-reveal>
+          <div class="s4-stat">
+            <div class="s4-stat-num">10K+</div>
+            <div class="s4-stat-label">Teams</div>
+          </div>
+          <div class="s4-stat">
+            <div class="s4-stat-num">100M+</div>
+            <div class="s4-stat-label">Records</div>
+          </div>
+          <div class="s4-stat">
+            <div class="s4-stat-num">50+</div>
+            <div class="s4-stat-label">Countries</div>
+          </div>
+          <div class="s4-stat">
+            <div class="s4-stat-num">99.9%</div>
+            <div class="s4-stat-label">Uptime</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<div class="pagination" id="pagination">
+  <button class="page-dot on" data-i="0" aria-label="Section 1"></button>
+  <button class="page-dot" data-i="1" aria-label="Section 2"></button>
+  <button class="page-dot" data-i="2" aria-label="Section 3"></button>
+  <button class="page-dot" data-i="3" aria-label="Section 4"></button>
+</div>
+
+<div class="scroll-driver" aria-hidden="true"></div>
+
+<script>
+(() => {
+  // ─── Lenis smooth scroll ───
+  const lenis = new Lenis({
+    duration: 1.15,
+    easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+    smoothWheel: true,
+    wheelMultiplier: 1,
+    touchMultiplier: 2,
+  });
+
+  gsap.registerPlugin(ScrollTrigger);
+  lenis.on('scroll', ScrollTrigger.update);
+  gsap.ticker.add((t) => lenis.raf(t * 1000));
+  gsap.ticker.lagSmoothing(0);
+
+  // ─── Refs ───
+  const nav         = document.getElementById('nav');
+  const secs        = [1,2,3,4].map((i) => document.getElementById('s' + i));
+  const themes      = ['dark', 'light', 'dark', 'light'];
+  const dots        = Array.from(document.querySelectorAll('.page-dot'));
+  const vh          = () => window.innerHeight;
+
+  // ─── Initial state ───
+  // Sections s2..s4: parked below viewport, rounded top, content hidden
+  gsap.set(secs.slice(1), {
+    yPercent: 100,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    boxShadow: '0 0 0 rgba(0,0,0,0)',
+  });
+  gsap.set('[data-reveal]', { y: 24, opacity: 0 });
+
+  // ─── Per-transition timeline ───
+  // 3 transitions: s1→s2, s2→s3, s3→s4
+  // Each: scroll range = 1 viewport. Progress 0→1 drives:
+  //   - outgoing: scale 1→0.93, opacity 1→0.55, blur 0→4px, radius 0→20
+  //   - incoming: translateY 100%→0, radius 28→0, box-shadow fade-in
+  //   - incoming content (stagger): y 48→0, opacity 0→1
+  function buildTransition(idx) {
+    const outgoing = secs[idx];
+    const incoming = secs[idx + 1];
+    const reveal   = incoming.querySelectorAll('[data-reveal]');
+
+    const tl = gsap.timeline({
+      scrollTrigger: {
+        trigger: document.body,
+        start:   () => idx * vh(),
+        end:     () => (idx + 1) * vh(),
+        scrub:   1,
+        invalidateOnRefresh: true,
+        onUpdate: (self) => {
+          const active = self.progress > 0.5 ? idx + 1 : idx;
+          setActive(active);
+        },
+      },
+    });
+
+    // Outgoing: recede like a card being pushed back
+    tl.to(outgoing, {
+      scale: 0.93,
+      opacity: 0.55,
+      filter: 'blur(4px)',
+      borderRadius: 20,
+      ease: 'power1.inOut',
+    }, 0);
+
+    // Incoming: slide up + radius flatten + shadow bloom
+    tl.to(incoming, {
+      yPercent: 0,
+      borderTopLeftRadius: 0,
+      borderTopRightRadius: 0,
+      boxShadow: '0 -28px 90px rgba(0,0,0,0.55)',
+      ease: 'power2.out',
+    }, 0);
+
+    // Internal content: staggered settle-in — starts early so it finishes well
+    // before the slide lands. Prevents the "section arrives but is empty" feel.
+    tl.to(reveal, {
+      y: 0,
+      opacity: 1,
+      stagger: 0.04,
+      duration: 0.32,
+      ease: 'power3.out',
+    }, 0.15);
+  }
+
+  for (let i = 0; i < 3; i++) buildTransition(i);
+
+  // ─── Nav theme + pagination ───
+  let currentIdx = -1;
+  function setActive(i) {
+    if (i === currentIdx) return;
+    currentIdx = i;
+    nav.classList.toggle('light', themes[i] === 'light');
+    dots.forEach((d, di) => d.classList.toggle('on', di === i));
+  }
+
+  // ─── Pagination dot clicks → smooth jump via Lenis ───
+  dots.forEach((d) => {
+    d.addEventListener('click', () => {
+      const i = +d.dataset.i;
+      lenis.scrollTo(i * vh(), { duration: 1.3, lock: true });
+    });
+  });
+
+  // ─── Hero intro on load ───
+  gsap.from('#s1 [data-intro]', {
+    y: 30,
+    opacity: 0,
+    stagger: 0.07,
+    duration: 0.9,
+    ease: 'power3.out',
+    delay: 0.15,
+    clearProps: 'all',
+  });
+
+  // Initial state
+  setActive(0);
+
+  // Ensure ScrollTriggers recompute on viewport resize
+  window.addEventListener('resize', () => ScrollTrigger.refresh());
+})();
+</script>
+</body>
+</html>
