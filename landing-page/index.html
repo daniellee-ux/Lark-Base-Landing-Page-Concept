@@ -494,33 +494,33 @@ img { max-width: 100%; display: block; }
 #s-product {
   background: #f7f7f4;
   color: #111;
-  padding-top: 88px;
-  padding-bottom: 40px;
+  padding-top: clamp(88px, 9vh, 112px);
+  padding-bottom: clamp(40px, 5vh, 72px);
   border-top-left-radius: 28px;
   border-top-right-radius: 28px;
 }
 .product-inner {
   height: 100%;
   display: flex; flex-direction: column;
-  justify-content: center; gap: 28px;
+  justify-content: center; gap: clamp(28px, 4vh, 56px);
 }
 .product-head { text-align: center; }
 .product-heading {
-  font-size: 40px; font-weight: 700; color: #111;
+  font-size: clamp(40px, 3.6vw, 58px); font-weight: 700; color: #111;
   letter-spacing: -1px; line-height: 1.15; margin-bottom: 10px;
 }
 .product-sub {
-  font-size: 15px; color: rgba(0,0,0,0.5); line-height: 1.5;
+  font-size: clamp(15px, 1.1vw, 18px); color: rgba(0,0,0,0.5); line-height: 1.5;
 }
 .product-layout {
   display: grid; grid-template-columns: 240px 1fr;
   gap: 24px; align-items: start;
 }
-.product-sidebar { display: flex; flex-direction: column; gap: 4px; }
+.product-sidebar { display: flex; flex-direction: column; gap: clamp(4px, 0.6vh, 8px); }
 .product-tab {
   display: flex; align-items: center; gap: 12px;
-  padding: 12px 14px; border-radius: 10px;
-  font-size: 13px; color: rgba(0,0,0,0.5);
+  padding: clamp(12px, 1.5vh, 18px) 14px; border-radius: 10px;
+  font-size: clamp(13px, 0.95vw, 15px); color: rgba(0,0,0,0.5);
   cursor: pointer;
   transition: background 0.2s, color 0.2s;
 }
@@ -545,7 +545,7 @@ img { max-width: 100%; display: block; }
 }
 .product-preview-top {
   background: linear-gradient(135deg, #eef2ff 0%, #f5f3ff 100%);
-  padding: 18px 22px;
+  padding: clamp(18px, 2vh, 26px) 22px;
   display: flex; gap: 14px; align-items: center;
   border-bottom: 0.5px solid rgba(0,0,0,0.04);
 }
@@ -559,28 +559,28 @@ img { max-width: 100%; display: block; }
 .product-preview-subtitle { font-size: 11px; color: rgba(0,0,0,0.5); }
 .product-preview-icons { display: flex; gap: 6px; }
 .product-preview-icon-sm { width: 28px; height: 28px; border-radius: 6px; background: rgba(99,102,241,0.16); }
-.product-preview-body { padding: 22px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
-.product-stat { font-size: 24px; font-weight: 700; color: #111; letter-spacing: -0.4px; }
-.product-stat-label { font-size: 11px; color: rgba(0,0,0,0.45); margin-top: 2px; }
-.product-stat-delta { font-size: 11px; color: #16a34a; font-weight: 500; margin-top: 6px; display: inline-flex; align-items: center; gap: 3px; }
+.product-preview-body { padding: clamp(22px, 2.6vh, 32px); display: grid; grid-template-columns: 1fr 1fr 1fr; gap: clamp(20px, 2.4vh, 32px); }
+.product-stat { font-size: clamp(24px, 2vw, 32px); font-weight: 700; color: #111; letter-spacing: -0.4px; }
+.product-stat-label { font-size: clamp(11px, 0.85vw, 13px); color: rgba(0,0,0,0.45); margin-top: 2px; }
+.product-stat-delta { font-size: clamp(11px, 0.85vw, 13px); color: #16a34a; font-weight: 500; margin-top: 6px; display: inline-flex; align-items: center; gap: 3px; }
 .product-chart-wrap {
   grid-column: 1 / -1;
   background: #fafafa; border-radius: 10px;
-  padding: 16px; margin-top: 4px;
+  padding: clamp(16px, 1.8vh, 22px); margin-top: 4px;
   border: 0.5px solid rgba(0,0,0,0.04);
 }
-.product-chart-label { font-size: 11px; color: rgba(0,0,0,0.45); margin-bottom: 10px; display: flex; justify-content: space-between; }
-.product-chart { display: flex; align-items: flex-end; gap: 6px; height: 80px; }
+.product-chart-label { font-size: clamp(11px, 0.85vw, 13px); color: rgba(0,0,0,0.45); margin-bottom: 10px; display: flex; justify-content: space-between; }
+.product-chart { display: flex; align-items: flex-end; gap: 6px; height: clamp(80px, 12vh, 140px); }
 .product-bar { border-radius: 3px 3px 0 0; background: #6366f1; opacity: 0.55; flex: 1; transition: opacity 0.3s; }
 .product-bar.hi { opacity: 1; }
 
 .product-features {
   display: grid; grid-template-columns: 1fr 1fr 1fr;
-  gap: 14px;
+  gap: clamp(14px, 1.6vh, 22px);
 }
 .product-feature {
   display: flex; gap: 14px; align-items: center;
-  padding: 14px 16px;
+  padding: clamp(14px, 1.8vh, 24px) clamp(16px, 1.6vw, 22px);
   background: white;
   border: 0.5px solid rgba(0,0,0,0.06);
   border-radius: 12px;
