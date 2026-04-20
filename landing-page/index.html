@@ -8,6 +8,7 @@
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.18/dist/lenis.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tweakpane@3.1.10/dist/tweakpane.min.js"></script>
 
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -655,6 +656,36 @@ body {
 .nav.light ~ .pagination .page-dot { background: rgba(0,0,0,0.18); }
 .nav.light ~ .pagination .page-dot.on { background: #6366f1; }
 
+/* ── Tweakpane container ── */
+#tp-container {
+  position: fixed;
+  bottom: 20px; left: 20px;
+  z-index: 200;
+  width: 300px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --tp-base-background-color: rgba(20,20,26,0.92);
+  --tp-base-shadow-color: rgba(0,0,0,0.4);
+  --tp-button-background-color: rgba(99,102,241,0.6);
+  --tp-button-background-color-active: rgba(99,102,241,0.9);
+  --tp-button-background-color-focus: rgba(99,102,241,0.8);
+  --tp-button-background-color-hover: rgba(99,102,241,0.75);
+}
+#tp-container .tp-rotv {
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+.tp-copied-toast {
+  position: fixed; bottom: 20px; left: 340px;
+  padding: 8px 14px; border-radius: 8px;
+  background: rgba(34,197,94,0.95); color: white;
+  font-size: 12px; font-weight: 500;
+  z-index: 201;
+  opacity: 0; transform: translateY(4px);
+  transition: opacity 0.2s, transform 0.2s;
+  pointer-events: none;
+}
+.tp-copied-toast.show { opacity: 1; transform: translateY(0); }
+
 @media (max-height: 760px) {
   .s1-title { font-size: 44px; }
   .s2-heading { font-size: 32px; }
@@ -1006,11 +1037,49 @@ body {
 
 <div class="scroll-driver" aria-hidden="true"></div>
 
+<div id="tp-container"></div>
+<div class="tp-copied-toast" id="tp-toast">Config copied to clipboard</div>
+
 <script>
 (() => {
-  // ─── Lenis smooth scroll ───
-  const lenis = new Lenis({
-    duration: 1.15,
+  // ─── Defaults + live config ───
+  const DEFAULTS = {
+    // Outgoing recede
+    scale: 0.93,
+    opacity: 0.55,
+    blur: 4,
+    radius: 20,
+    // Incoming slide
+    shadowY: -28,
+    shadowBlur: 90,
+    shadowOpacity: 0.55,
+    startRadius: 28,
+    slideEase: 'power2.out',
+    // Content stagger
+    revealStart: 0.15,
+    revealStagger: 0.04,
+    revealDuration: 0.32,
+    revealY: 24,
+    revealEase: 'power3.out',
+    // Scroll feel
+    lenisDuration: 1.15,
+    scrub: 1,
+  };
+  const CONFIG = { ...DEFAULTS };
+
+  const EASES = {
+    'linear':         'none',
+    'power2.out':     'power2.out',
+    'power3.out':     'power3.out',
+    'power4.out':     'power4.out',
+    'expo.out':       'expo.out',
+    'back.out(1.2)':  'back.out(1.2)',
+    'back.out(1.7)':  'back.out(1.7)',
+  };
+
+  // ─── Lenis ───
+  let lenis = new Lenis({
+    duration: CONFIG.lenisDuration,
     easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
     smoothWheel: true,
     wheelMultiplier: 1,
@@ -1023,28 +1092,42 @@ body {
   gsap.ticker.lagSmoothing(0);
 
   // ─── Refs ───
-  const nav         = document.getElementById('nav');
-  const secs        = [1,2,3,4].map((i) => document.getElementById('s' + i));
-  const themes      = ['dark', 'light', 'dark', 'light'];
-  const dots        = Array.from(document.querySelectorAll('.page-dot'));
-  const vh          = () => window.innerHeight;
+  const nav    = document.getElementById('nav');
+  const secs   = [1,2,3,4].map((i) => document.getElementById('s' + i));
+  const themes = ['dark', 'light', 'dark', 'light'];
+  const dots   = Array.from(document.querySelectorAll('.page-dot'));
+  const vh     = () => window.innerHeight;
 
-  // ─── Initial state ───
-  // Sections s2..s4: parked below viewport, rounded top, content hidden
-  gsap.set(secs.slice(1), {
-    yPercent: 100,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    boxShadow: '0 0 0 rgba(0,0,0,0)',
-  });
-  gsap.set('[data-reveal]', { y: 24, opacity: 0 });
+  // ─── Transitions (rebuilt on config change) ───
+  function buildAllTransitions() {
+    // Kill existing triggers
+    ScrollTrigger.getAll().forEach((st) => st.kill());
 
-  // ─── Per-transition timeline ───
-  // 3 transitions: s1→s2, s2→s3, s3→s4
-  // Each: scroll range = 1 viewport. Progress 0→1 drives:
-  //   - outgoing: scale 1→0.93, opacity 1→0.55, blur 0→4px, radius 0→20
-  //   - incoming: translateY 100%→0, radius 28→0, box-shadow fade-in
-  //   - incoming content (stagger): y 48→0, opacity 0→1
+    // Reset state on every section
+    gsap.set(secs[0], {
+      scale: 1, opacity: 1,
+      filter: 'blur(0px)',
+      borderRadius: 0,
+      clearProps: 'transform,filter,opacity,borderRadius',
+    });
+    gsap.set(secs.slice(1), {
+      yPercent: 100,
+      scale: 1, opacity: 1,
+      filter: 'blur(0px)',
+      borderRadius: 0,
+      borderTopLeftRadius: CONFIG.startRadius,
+      borderTopRightRadius: CONFIG.startRadius,
+      boxShadow: '0 0 0 rgba(0,0,0,0)',
+    });
+    gsap.set('[data-reveal]', { y: CONFIG.revealY, opacity: 0 });
+
+    // Build 3 transition timelines
+    for (let i = 0; i < 3; i++) {
+      buildTransition(i);
+    }
+    ScrollTrigger.refresh();
+  }
+
   function buildTransition(idx) {
     const outgoing = secs[idx];
     const incoming = secs[idx + 1];
@@ -1055,7 +1138,7 @@ body {
         trigger: document.body,
         start:   () => idx * vh(),
         end:     () => (idx + 1) * vh(),
-        scrub:   1,
+        scrub:   CONFIG.scrub,
         invalidateOnRefresh: true,
         onUpdate: (self) => {
           const active = self.progress > 0.5 ? idx + 1 : idx;
@@ -1064,38 +1147,32 @@ body {
       },
     });
 
-    // Outgoing: recede like a card being pushed back
     tl.to(outgoing, {
-      scale: 0.93,
-      opacity: 0.55,
-      filter: 'blur(4px)',
-      borderRadius: 20,
+      scale: CONFIG.scale,
+      opacity: CONFIG.opacity,
+      filter: `blur(${CONFIG.blur}px)`,
+      borderRadius: CONFIG.radius,
       ease: 'power1.inOut',
     }, 0);
 
-    // Incoming: slide up + radius flatten + shadow bloom
     tl.to(incoming, {
       yPercent: 0,
       borderTopLeftRadius: 0,
       borderTopRightRadius: 0,
-      boxShadow: '0 -28px 90px rgba(0,0,0,0.55)',
-      ease: 'power2.out',
+      boxShadow: `0 ${CONFIG.shadowY}px ${CONFIG.shadowBlur}px rgba(0,0,0,${CONFIG.shadowOpacity})`,
+      ease: CONFIG.slideEase,
     }, 0);
 
-    // Internal content: staggered settle-in — starts early so it finishes well
-    // before the slide lands. Prevents the "section arrives but is empty" feel.
     tl.to(reveal, {
       y: 0,
       opacity: 1,
-      stagger: 0.04,
-      duration: 0.32,
-      ease: 'power3.out',
-    }, 0.15);
+      stagger: CONFIG.revealStagger,
+      duration: CONFIG.revealDuration,
+      ease: CONFIG.revealEase,
+    }, CONFIG.revealStart);
   }
 
-  for (let i = 0; i < 3; i++) buildTransition(i);
-
-  // ─── Nav theme + pagination ───
+  // ─── Nav + pagination ───
   let currentIdx = -1;
   function setActive(i) {
     if (i === currentIdx) return;
@@ -1104,7 +1181,6 @@ body {
     dots.forEach((d, di) => d.classList.toggle('on', di === i));
   }
 
-  // ─── Pagination dot clicks → smooth jump via Lenis ───
   dots.forEach((d) => {
     d.addEventListener('click', () => {
       const i = +d.dataset.i;
@@ -1112,7 +1188,7 @@ body {
     });
   });
 
-  // ─── Hero intro on load ───
+  // ─── Hero intro ───
   gsap.from('#s1 [data-intro]', {
     y: 30,
     opacity: 0,
@@ -1123,10 +1199,82 @@ body {
     clearProps: 'all',
   });
 
-  // Initial state
-  setActive(0);
+  // ─── Tweakpane ───
+  const pane = new Tweakpane.Pane({
+    container: document.getElementById('tp-container'),
+    title: 'Transition Lab',
+  });
 
-  // Ensure ScrollTriggers recompute on viewport resize
+  // Debounce rebuild to next frame so slider drags don't rebuild per-pixel
+  let pending = false;
+  const scheduleRebuild = () => {
+    if (pending) return;
+    pending = true;
+    requestAnimationFrame(() => {
+      pending = false;
+      buildAllTransitions();
+    });
+  };
+
+  const f1 = pane.addFolder({ title: 'Outgoing recede' });
+  f1.addInput(CONFIG, 'scale',         { min: 0.7, max: 1,    step: 0.01 }).on('change', scheduleRebuild);
+  f1.addInput(CONFIG, 'opacity',       { min: 0,   max: 1,    step: 0.05 }).on('change', scheduleRebuild);
+  f1.addInput(CONFIG, 'blur',          { min: 0,   max: 10,   step: 0.5, label: 'blur (px)' }).on('change', scheduleRebuild);
+  f1.addInput(CONFIG, 'radius',        { min: 0,   max: 40,   step: 1, label: 'radius (px)' }).on('change', scheduleRebuild);
+
+  const f2 = pane.addFolder({ title: 'Incoming slide' });
+  f2.addInput(CONFIG, 'shadowY',       { min: -60, max: 0,    step: 1, label: 'shadow-y (px)' }).on('change', scheduleRebuild);
+  f2.addInput(CONFIG, 'shadowBlur',    { min: 20,  max: 200,  step: 5, label: 'shadow-blur' }).on('change', scheduleRebuild);
+  f2.addInput(CONFIG, 'shadowOpacity', { min: 0,   max: 1,    step: 0.05, label: 'shadow-alpha' }).on('change', scheduleRebuild);
+  f2.addInput(CONFIG, 'startRadius',   { min: 0,   max: 40,   step: 1, label: 'start-radius' }).on('change', scheduleRebuild);
+  f2.addInput(CONFIG, 'slideEase',     { options: EASES, label: 'slide-ease' }).on('change', scheduleRebuild);
+
+  const f3 = pane.addFolder({ title: 'Content stagger' });
+  f3.addInput(CONFIG, 'revealStart',    { min: 0,    max: 0.8,  step: 0.05, label: 'start (timeline)' }).on('change', scheduleRebuild);
+  f3.addInput(CONFIG, 'revealStagger',  { min: 0,    max: 0.15, step: 0.01, label: 'stagger (s)' }).on('change', scheduleRebuild);
+  f3.addInput(CONFIG, 'revealDuration', { min: 0.1,  max: 0.8,  step: 0.02, label: 'duration (s)' }).on('change', scheduleRebuild);
+  f3.addInput(CONFIG, 'revealY',        { min: 0,    max: 80,   step: 1, label: 'y offset (px)' }).on('change', scheduleRebuild);
+  f3.addInput(CONFIG, 'revealEase',     { options: EASES, label: 'ease' }).on('change', scheduleRebuild);
+
+  const f4 = pane.addFolder({ title: 'Scroll feel' });
+  f4.addInput(CONFIG, 'lenisDuration', { min: 0.5, max: 2.5, step: 0.05, label: 'lenis (s)' }).on('change', () => {
+    lenis.options.duration = CONFIG.lenisDuration;
+  });
+  f4.addInput(CONFIG, 'scrub', { min: 0, max: 3, step: 0.1 }).on('change', scheduleRebuild);
+
+  // Buttons
+  pane.addBlade({ view: 'separator' });
+  pane.addButton({ title: 'Reset to defaults' }).on('click', () => {
+    Object.assign(CONFIG, DEFAULTS);
+    pane.refresh();
+    lenis.options.duration = CONFIG.lenisDuration;
+    buildAllTransitions();
+  });
+
+  const toast = document.getElementById('tp-toast');
+  let toastTimer = null;
+  const flashToast = (text) => {
+    toast.textContent = text;
+    toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove('show'), 1600);
+  };
+
+  pane.addButton({ title: 'Copy config' }).on('click', () => {
+    const lines = Object.entries(CONFIG).map(([k, v]) => {
+      const val = typeof v === 'string' ? `'${v}'` : v;
+      return `  ${k}: ${val},`;
+    });
+    const text = `const CONFIG = {\n${lines.join('\n')}\n};`;
+    navigator.clipboard.writeText(text).then(
+      () => flashToast('Config copied to clipboard'),
+      () => flashToast('Copy failed — check console') || console.log(text),
+    );
+  });
+
+  // ─── Init ───
+  setActive(0);
+  buildAllTransitions();
   window.addEventListener('resize', () => ScrollTrigger.refresh());
 })();
 </script>
