@@ -1257,13 +1257,13 @@ img { max-width: 100%; display: block; }
           <p class="product-sub">From dashboards and workflows to forms and views — manage every part of your work in one place.</p>
         </div>
         <div class="product-layout">
-          <div class="product-sidebar" data-reveal>
-            <div class="product-tab active"><div class="product-tab-icon"></div>App Modes</div>
-            <div class="product-tab"><div class="product-tab-icon"></div>Database</div>
-            <div class="product-tab"><div class="product-tab-icon"></div>Views</div>
-            <div class="product-tab"><div class="product-tab-icon"></div>Workflows</div>
-            <div class="product-tab"><div class="product-tab-icon"></div>Dashboards</div>
-            <div class="product-tab"><div class="product-tab-icon"></div>Permissions</div>
+          <div class="product-sidebar">
+            <div class="product-tab active" data-reveal><div class="product-tab-icon"></div>App Modes</div>
+            <div class="product-tab" data-reveal><div class="product-tab-icon"></div>Database</div>
+            <div class="product-tab" data-reveal><div class="product-tab-icon"></div>Views</div>
+            <div class="product-tab" data-reveal><div class="product-tab-icon"></div>Workflows</div>
+            <div class="product-tab" data-reveal><div class="product-tab-icon"></div>Dashboards</div>
+            <div class="product-tab" data-reveal><div class="product-tab-icon"></div>Permissions</div>
           </div>
           <div class="product-preview" data-reveal>
             <div class="product-preview-top">
@@ -1279,22 +1279,22 @@ img { max-width: 100%; display: block; }
               </div>
             </div>
             <div class="product-preview-body">
-              <div>
+              <div data-reveal>
                 <div class="product-stat">$7.58M</div>
                 <div class="product-stat-label">Monthly Revenue</div>
                 <div class="product-stat-delta">↑ 12.4%</div>
               </div>
-              <div>
+              <div data-reveal>
                 <div class="product-stat">1,284</div>
                 <div class="product-stat-label">New Orders</div>
                 <div class="product-stat-delta">↑ 8.2%</div>
               </div>
-              <div>
+              <div data-reveal>
                 <div class="product-stat">94.7%</div>
                 <div class="product-stat-label">Target Achieved</div>
                 <div class="product-stat-delta">↑ 3.1%</div>
               </div>
-              <div class="product-chart-wrap">
+              <div class="product-chart-wrap" data-reveal>
                 <div class="product-chart-label"><span>Last 8 weeks</span><span style="color:#6366f1">● Revenue</span></div>
                 <div class="product-chart">
                   <div class="product-bar" style="height:38%"></div>
@@ -1310,8 +1310,8 @@ img { max-width: 100%; display: block; }
             </div>
           </div>
         </div>
-        <div class="product-features" data-reveal>
-          <div class="product-feature">
+        <div class="product-features">
+          <div class="product-feature" data-reveal>
             <div class="product-feature-icon i1">
               <svg viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
             </div>
@@ -1320,7 +1320,7 @@ img { max-width: 100%; display: block; }
               <div class="product-feature-desc">Jumpstart from patterns that work</div>
             </div>
           </div>
-          <div class="product-feature">
+          <div class="product-feature" data-reveal>
             <div class="product-feature-icon i2">
               <svg viewBox="0 0 24 24" fill="none" stroke="#0891b2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
             </div>
@@ -1329,7 +1329,7 @@ img { max-width: 100%; display: block; }
               <div class="product-feature-desc">Connect the tools you already use</div>
             </div>
           </div>
-          <div class="product-feature">
+          <div class="product-feature" data-reveal>
             <div class="product-feature-icon i3">
               <svg viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
             </div>
@@ -1591,7 +1591,7 @@ img { max-width: 100%; display: block; }
   const DEFAULTS = {
     scale: 0.93, opacity: 0.55, blur: 4, radius: 20,
     shadowY: -28, shadowBlur: 90, shadowOpacity: 0.55, startRadius: 28, slideEase: 'none',
-    revealStart: 0.15, revealStagger: 0.04, revealDuration: 0.32, revealY: 24, revealEase: 'power3.out',
+    revealStart: 0.1, revealStagger: 0.025, revealDuration: 0.34, revealY: 28, revealEase: 'power3.out',
     lenisDuration: 1.15, scrub: 1,
   };
   const CONFIG = { ...DEFAULTS };
