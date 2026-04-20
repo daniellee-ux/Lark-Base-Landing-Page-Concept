@@ -686,6 +686,35 @@ body {
 }
 .tp-copied-toast.show { opacity: 1; transform: translateY(0); }
 
+/* Help tooltip for config rows */
+#tp-container [data-help] { cursor: help; }
+#tp-tooltip {
+  position: fixed;
+  z-index: 300;
+  max-width: 280px;
+  padding: 11px 14px;
+  background: rgba(22,22,30,0.96);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 0.5px solid rgba(255,255,255,0.12);
+  border-radius: 8px;
+  color: rgba(255,255,255,0.88);
+  font-size: 12px;
+  line-height: 1.55;
+  letter-spacing: 0.01em;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif;
+  box-shadow: 0 10px 32px rgba(0,0,0,0.5);
+  pointer-events: none;
+  opacity: 0;
+  transform: translateX(-4px);
+  transition: opacity 0.16s ease, transform 0.16s ease;
+}
+#tp-tooltip.show {
+  opacity: 1;
+  transform: translateX(0);
+}
+#tp-tooltip b { color: #a5b4fc; font-weight: 600; }
+
 @media (max-height: 760px) {
   .s1-title { font-size: 44px; }
   .s2-heading { font-size: 32px; }
@@ -1039,6 +1068,7 @@ body {
 
 <div id="tp-container"></div>
 <div class="tp-copied-toast" id="tp-toast">Config copied to clipboard</div>
+<div id="tp-tooltip"></div>
 
 <script>
 (() => {
@@ -1216,31 +1246,94 @@ body {
     });
   };
 
+  // Per-field hover explanations. HTML allowed in values.
+  const HELP = {
+    scale:          '<b>被盖 section 缩到多大。</b>1.0 = 不缩，0.85 = 明显后退。越小"推到后景"越强，但 &lt;0.92 会在 body 边缘露出明显的黑色框。',
+    opacity:        '<b>被盖层淡化到几成。</b>越低越空，过低会让下一层 / body 黑底透出来。',
+    blur:           '<b>被盖层高斯模糊（px）。</b>景深关键，但 &gt;4 会在一些机器上掉帧。',
+    radius:         '<b>被盖层最终圆角（px）。</b>和 scale 配合形成"卡片被推走"的感觉；0 = 不收圆，30+ 卡片感很重。',
+    shadowY:        '<b>顶部阴影向上偏移距离（px）。</b>越负越悬浮，模拟更高的光源。',
+    shadowBlur:     '<b>阴影模糊半径（px）。</b>控制阴影柔度，60–120 比较柔。',
+    shadowOpacity:  '<b>阴影不透明度。</b>是"压下来"质感的核心来源，低于 0.3 就几乎看不到。',
+    startRadius:    '<b>section 入场时的初始顶部圆角（px）。</b>越大入场时越像一张卡片冒上来。',
+    slideEase:      '<b>slide 本身的曲线。</b>linear = 1:1 跟手，power2.out = 末端减速（推荐），expo.out = 强减速更戏剧。',
+    revealStart:    '<b>slide timeline 到几成时内容开始 fade-in。</b>0 = 最早开始，0.5 = 半程才开始。越小"边滑边显"，越大"先落地再显"。',
+    revealStagger:  '<b>元素之间的触发间隔（秒）。</b>0.02 = 齐刷刷出现，0.1 = 明显一个一个来。',
+    revealDuration: '<b>每个元素自己 fade-in 的时长（秒）。</b>0.2 = 快进，0.5 = 从容。',
+    revealY:        '<b>元素从几 px 下方滑上来。</b>0 = 只 fade 不位移，40+ 位移感明显。',
+    revealEase:     '<b>元素自己的曲线。</b>power3.out 现代，back.out 有轻微 overshoot 弹性。',
+    lenisDuration:  '<b>Lenis 从滚轮输入到目标位置的追赶时长（秒）。</b>0.8 = 直接跟手，1.5 = 明显惯性，2+ = floaty 漂。',
+    scrub:          '<b>GSAP ScrollTrigger 的 scrub lag。</b>0 = 立即响应（1:1 跟手），1–2 = 动画落后 1–2 秒追（橡皮筋感）。',
+  };
+
+  // Helper: add a Tweakpane input, wire its change handler, and attach
+  // the hover help text to the row DOM element.
+  const bind = (folder, key, opts, onChange = scheduleRebuild) => {
+    const b = folder.addInput(CONFIG, key, opts);
+    b.on('change', onChange);
+    if (HELP[key] && b.element) b.element.dataset.help = HELP[key];
+    return b;
+  };
+
   const f1 = pane.addFolder({ title: 'Outgoing recede' });
-  f1.addInput(CONFIG, 'scale',         { min: 0.7, max: 1,    step: 0.01 }).on('change', scheduleRebuild);
-  f1.addInput(CONFIG, 'opacity',       { min: 0,   max: 1,    step: 0.05 }).on('change', scheduleRebuild);
-  f1.addInput(CONFIG, 'blur',          { min: 0,   max: 10,   step: 0.5, label: 'blur (px)' }).on('change', scheduleRebuild);
-  f1.addInput(CONFIG, 'radius',        { min: 0,   max: 40,   step: 1, label: 'radius (px)' }).on('change', scheduleRebuild);
+  bind(f1, 'scale',         { min: 0.7, max: 1,    step: 0.01 });
+  bind(f1, 'opacity',       { min: 0,   max: 1,    step: 0.05 });
+  bind(f1, 'blur',          { min: 0,   max: 10,   step: 0.5, label: 'blur (px)' });
+  bind(f1, 'radius',        { min: 0,   max: 40,   step: 1, label: 'radius (px)' });
 
   const f2 = pane.addFolder({ title: 'Incoming slide' });
-  f2.addInput(CONFIG, 'shadowY',       { min: -60, max: 0,    step: 1, label: 'shadow-y (px)' }).on('change', scheduleRebuild);
-  f2.addInput(CONFIG, 'shadowBlur',    { min: 20,  max: 200,  step: 5, label: 'shadow-blur' }).on('change', scheduleRebuild);
-  f2.addInput(CONFIG, 'shadowOpacity', { min: 0,   max: 1,    step: 0.05, label: 'shadow-alpha' }).on('change', scheduleRebuild);
-  f2.addInput(CONFIG, 'startRadius',   { min: 0,   max: 40,   step: 1, label: 'start-radius' }).on('change', scheduleRebuild);
-  f2.addInput(CONFIG, 'slideEase',     { options: EASES, label: 'slide-ease' }).on('change', scheduleRebuild);
+  bind(f2, 'shadowY',       { min: -60, max: 0,    step: 1, label: 'shadow-y (px)' });
+  bind(f2, 'shadowBlur',    { min: 20,  max: 200,  step: 5, label: 'shadow-blur' });
+  bind(f2, 'shadowOpacity', { min: 0,   max: 1,    step: 0.05, label: 'shadow-alpha' });
+  bind(f2, 'startRadius',   { min: 0,   max: 40,   step: 1, label: 'start-radius' });
+  bind(f2, 'slideEase',     { options: EASES, label: 'slide-ease' });
 
   const f3 = pane.addFolder({ title: 'Content stagger' });
-  f3.addInput(CONFIG, 'revealStart',    { min: 0,    max: 0.8,  step: 0.05, label: 'start (timeline)' }).on('change', scheduleRebuild);
-  f3.addInput(CONFIG, 'revealStagger',  { min: 0,    max: 0.15, step: 0.01, label: 'stagger (s)' }).on('change', scheduleRebuild);
-  f3.addInput(CONFIG, 'revealDuration', { min: 0.1,  max: 0.8,  step: 0.02, label: 'duration (s)' }).on('change', scheduleRebuild);
-  f3.addInput(CONFIG, 'revealY',        { min: 0,    max: 80,   step: 1, label: 'y offset (px)' }).on('change', scheduleRebuild);
-  f3.addInput(CONFIG, 'revealEase',     { options: EASES, label: 'ease' }).on('change', scheduleRebuild);
+  bind(f3, 'revealStart',    { min: 0,    max: 0.8,  step: 0.05, label: 'start (timeline)' });
+  bind(f3, 'revealStagger',  { min: 0,    max: 0.15, step: 0.01, label: 'stagger (s)' });
+  bind(f3, 'revealDuration', { min: 0.1,  max: 0.8,  step: 0.02, label: 'duration (s)' });
+  bind(f3, 'revealY',        { min: 0,    max: 80,   step: 1, label: 'y offset (px)' });
+  bind(f3, 'revealEase',     { options: EASES, label: 'ease' });
 
   const f4 = pane.addFolder({ title: 'Scroll feel' });
-  f4.addInput(CONFIG, 'lenisDuration', { min: 0.5, max: 2.5, step: 0.05, label: 'lenis (s)' }).on('change', () => {
+  bind(f4, 'lenisDuration', { min: 0.5, max: 2.5, step: 0.05, label: 'lenis (s)' }, () => {
     lenis.options.duration = CONFIG.lenisDuration;
   });
-  f4.addInput(CONFIG, 'scrub', { min: 0, max: 3, step: 0.1 }).on('change', scheduleRebuild);
+  bind(f4, 'scrub', { min: 0, max: 3, step: 0.1 });
+
+  // ─── Hover tooltip ───
+  const tooltip = document.getElementById('tp-tooltip');
+  const tpRoot = document.getElementById('tp-container');
+  let currentHelpRow = null;
+  let showTimer = null;
+
+  const showTip = (row) => {
+    tooltip.innerHTML = row.dataset.help;
+    const rect = row.getBoundingClientRect();
+    // Anchor tooltip to the right of the panel, vertically aligned with the row.
+    tooltip.style.left = (rect.right + 12) + 'px';
+    tooltip.style.top  = (rect.top - 6) + 'px';
+    tooltip.classList.add('show');
+  };
+  const hideTip = () => tooltip.classList.remove('show');
+
+  tpRoot.addEventListener('mouseover', (e) => {
+    const row = e.target.closest('[data-help]');
+    if (!row || row === currentHelpRow) return;
+    currentHelpRow = row;
+    clearTimeout(showTimer);
+    // Small delay so skimming over the panel doesn't fire a tooltip per row.
+    showTimer = setTimeout(() => showTip(row), 180);
+  });
+  tpRoot.addEventListener('mouseout', (e) => {
+    const row = e.target.closest('[data-help]');
+    if (!row) return;
+    const nextRow = e.relatedTarget && e.relatedTarget.closest && e.relatedTarget.closest('[data-help]');
+    if (nextRow === row) return;
+    currentHelpRow = null;
+    clearTimeout(showTimer);
+    hideTip();
+  });
 
   // Buttons
   pane.addBlade({ view: 'separator' });
