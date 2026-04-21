@@ -4,6 +4,8 @@ A single-file scroll-driven landing page exploring premium section-coverage tran
 
 Live: open `index.html` in any modern browser. No build step.
 
+For the underlying CSS pattern powering each transition (sticky + negative-margin + z-index cover), see [`cover-effect-solution.md`](./cover-effect-solution.md) — it isolates one dark→light transition and walks through the three independent ingredients, the dynamic-height JS sync, and the pitfalls.
+
 ## What it is
 
 Four full-viewport sections stacked in z-order inside a fixed stage. As you scroll, each successive section slides up to cover the previous one. The one being covered recedes visually (scales down, blurs, loses opacity, rounds its corners) so it reads as a card being pushed back into a stack rather than a flat layer swap.
@@ -114,7 +116,13 @@ Total document height is 400vh — 3 transitions × 1vh of scroll each, plus 1vh
 
 ```
 .
-└── index.html   # single-file concept — styles, markup, and script all inline
+├── index.html                  # main concept — single-file, all 4 transitions, Tweakpane panel
+├── cover-effect-solution.md    # technical writeup of the dark→light cover pattern
+│
+├── cover-demo.html             # isolated dark=100vh minimal demo (the classic pattern)
+├── dev-cover-fixed.html        # isolated dark=1500px fixed-height case (negative sticky top)
+├── dev-cover-dynamic.html      # isolated dynamic-height case (--dark-h synced via ResizeObserver)
+└── flex-squeeze-demo.html      # adjacent: `flex:1 + min-height:0` squeeze trick explainer
 ```
 
-That's the whole thing.
+`index.html` is the polished concept. The `cover-*` / `dev-*` files are isolated sandboxes from the debugging of the sticky cover mechanism — each strips the concept down to one dark→light transition at a single complexity level, for clarity and as regression scaffolding. See the markdown doc for which file corresponds to which case.
