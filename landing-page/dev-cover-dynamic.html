@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dark → Light 動態高度 cover</title>
+    <style>
+        :root {
+            --ai-scale: 1;
+            --ai-opacity: 1;
+            --ai-blur: 0px;
+            --ai-radius: 0px;
+            --light-radius: 28px;
+            --shadow-y: 0px;
+            --shadow-blur: 0px;
+            --shadow-opacity: 0;
+            /* ← dark 實際高度由 JS 用 ResizeObserver 寫入；預設 100vh 當 fallback */
+            --dark-h: 100vh;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", sans-serif;
+            background: #0a0a12;
+            color: #fff;
+            overscroll-behavior: none;
+        }
+
+        .container { width: 100%; }
+
+        /* ① Pin：stage 高度 = dark.height + 100vh (JS 用 --dark-h 餵數值) */
+        .stage {
+            position: relative;
+            height: calc(var(--dark-h) + 100vh);
+            z-index: 1;
+        }
+
+        .dark {
+            background: #000;
+            color: #fff;
+            position: sticky;
+            /* 負 top 讓 dark 先自然滾完，底部接到視窗底才釘 */
+            top: calc(100vh - var(--dark-h));
+            min-height: 100vh;    /* 內容少於視窗時至少撐到 100vh */
+            overflow: hidden;
+
+            transform: translateZ(0) scale(var(--ai-scale));
+            opacity: var(--ai-opacity);
+            filter: blur(var(--ai-blur));
+            border-radius: var(--ai-radius);
+            transform-origin: center center;
+            will-change: transform, filter, opacity, border-radius;
+        }
+
+        .dark-content {
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 80px 24px 56px;
+        }
+
+        .title {
+            font-size: 56px;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 56px;
+            letter-spacing: -1px;
+        }
+
+        .dark p {
+            font-size: 20px;
+            line-height: 1.7;
+            color: rgba(255, 255, 255, 0.72);
+            margin-bottom: 22px;
+        }
+
+        .dark p code {
+            background: rgba(255, 255, 255, 0.08);
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 15px;
+            font-family: "SF Mono", Monaco, monospace;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .bottom {
+            text-align: center;
+            margin-top: 56px;
+            padding-bottom: 40px;
+            font-size: 18px;
+            color: rgba(255, 255, 255, 0.55);
+        }
+
+        /* ② Overlap + ③ Stack */
+        .light {
+            position: relative;
+            z-index: 2;
+            margin-top: -100vh;   /* ← 永遠是 -100vh，跟 dark 高度無關 */
+            width: 100%;
+            min-height: 1500px;
+            background: #fff;
+            color: #111;
+            border-top-left-radius: var(--light-radius);
+            border-top-right-radius: var(--light-radius);
+            box-shadow: 0 var(--shadow-y) var(--shadow-blur) rgba(0, 0, 0, var(--shadow-opacity));
+            will-change: border-radius, box-shadow;
+        }
+
+        .light-inner { max-width: 980px; margin: 0 auto; padding: 80px 24px 160px; }
+        .light h2 { font-size: 40px; letter-spacing: -0.6px; margin-bottom: 10px; }
+        .light p { color: rgba(0, 0, 0, 0.62); line-height: 1.7; font-size: 16px; margin-bottom: 18px; }
+        .cards { margin-top: 28px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+        .card { border-radius: 14px; border: 1px solid rgba(0, 0, 0, 0.08); background: linear-gradient(180deg, rgba(0, 0, 0, 0.02), rgba(0, 0, 0, 0)); padding: 16px 16px 18px; }
+        .card-title { font-weight: 600; font-size: 14px; margin-bottom: 6px; }
+        .card-desc { font-size: 13px; color: rgba(0, 0, 0, 0.58); line-height: 1.5; }
+
+        @media (max-width: 860px) {
+            .title { font-size: 44px; }
+            .cards { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="stage" id="stage">
+            <div class="dark" id="dark">
+                <div class="dark-content">
+                    <h1 class="title">Lark Base</h1>
+                    <p>這是一段動態高度的 hero 內容。不同頁面可能有不同長度的文案——有時只是一句標語，有時是一整段產品敘述。</p>
+                    <p>不管多長，cover 效果都要正常運作：讓用戶看完整段內容，白色區才從下往上蓋。</p>
+                    <p>關鍵在 <code>.dark { position: sticky; bottom: 0 }</code> —— 底部定錨讓 dark 自然滾完所有內容，底部剛好接到視窗底時才釘住。</p>
+                    <p>第二個關鍵是 <code>.stage { padding-bottom: 100vh }</code> —— 提供 cover 動畫所需的 100vh 滾動空間，不需要計算 dark 多高。</p>
+                    <p><code>min-height: 100vh</code> 是保險：內容少於一個視窗時也撐到 100vh，避免 sticky 在小元素上出怪事。</p>
+                    <p>最後 <code>.light { margin-top: -100vh }</code> 本來就是常數，跟 dark 完全脫鉤。</p>
+                    <p>隨便加內容都可以：多加一段，dark 就變高 100px；少一段，變矮 100px；cover 觸發點自動跟著內容高度移動。</p>
+                    <p>────────── 以下為追加內容驗證動態適應 ──────────</p>
+                    <p>把 hero 當成一整頁產品故事來寫：開場白、痛點、解法、關鍵數據、客戶引述，隨便多少段落都可以。只要 ResizeObserver 能偵測到 dark 高度變化，CSS 變數就會跟著更新。</p>
+                    <p>假設產品經理今天臨時想多塞三段介紹文案——不用改 CSS、不用算 stage 高度、不用重新推導 light 的 margin-top。</p>
+                    <p>或者想再加三段 FAQ、客戶 logo 列、甚至嵌入一段互動 demo，都不影響 cover 觸發時機。觸發點永遠是「dark 滾到底部接到視窗底」。</p>
+                    <p>這就是把「變化的部分」（dark 實際高度）餵給 CSS 之後的彈性——三個零件（pin / overlap / stack）都保持單一公式，只有一個變數隨內容浮動。</p>
+                    <p>把這頁當成壓力測試：dark 現在比第一版多約 600px。重新驗證時，sticky 觸發點、cover 動畫起始、完成點應該全部自動對齊新的高度。</p>
+                    <p class="bottom">AI Work OS for Every Business</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="light" id="light">
+            <div class="light-inner">
+                <h2 data-reveal>Built for every kind of work</h2>
+                <p data-reveal>白色區域在 dark 最後一屏滾到底時開始從下往上覆蓋，同時 dark 後退成卡片（縮放 / 模糊 / 透明度 / 圓角）。</p>
+                <p data-reveal>這個版本 dark 是動態高度——內容多少都行，不用改 CSS。</p>
+                <div class="cards">
+                    <div class="card" data-reveal>
+                        <div class="card-title">Dynamic Height</div>
+                        <div class="card-desc">dark 內容多高，滾動區段就多長。</div>
+                    </div>
+                    <div class="card" data-reveal>
+                        <div class="card-title">Bottom Sticky</div>
+                        <div class="card-desc"><code>bottom: 0</code> 自動在底接到視窗底時釘。</div>
+                    </div>
+                    <div class="card" data-reveal>
+                        <div class="card-title">Padding for Cover</div>
+                        <div class="card-desc"><code>padding-bottom: 100vh</code> 提供覆蓋距離。</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (() => {
+            const dark = document.getElementById('dark');
+            const light = document.getElementById('light');
+            const root = document.documentElement;
+
+            // ← 關鍵：把 dark 實際高度寫入 --dark-h
+            const syncDarkHeight = () => {
+                root.style.setProperty('--dark-h', dark.offsetHeight + 'px');
+            };
+            syncDarkHeight();
+            new ResizeObserver(syncDarkHeight).observe(dark);
+            const clamp01 = (v) => Math.min(1, Math.max(0, v));
+            const lerp = (a, b, t) => a + (b - a) * t;
+            const CONFIG = {
+                scale: 0.93, opacity: 0.55, blur: 4, radius: 20,
+                startRadius: 28, shadowY: -28, shadowBlur: 90, shadowOpacity: 0.55,
+                revealStart: 0.2, revealStagger: 0.06, revealDuration: 0.25, revealY: 22,
+            };
+            const revealEls = Array.from(light.querySelectorAll('[data-reveal]'));
+            let ticking = false;
+            const update = () => {
+                ticking = false;
+                const rect = light.getBoundingClientRect();
+                const vh = window.innerHeight || 1;
+                const t = clamp01((vh - rect.top) / vh);
+                const root = document.documentElement.style;
+                root.setProperty('--ai-scale', String(lerp(1, CONFIG.scale, t)));
+                root.setProperty('--ai-opacity', String(lerp(1, CONFIG.opacity, t)));
+                root.setProperty('--ai-blur', `${lerp(0, CONFIG.blur, t)}px`);
+                root.setProperty('--ai-radius', `${lerp(0, CONFIG.radius, t)}px`);
+                root.setProperty('--light-radius', `${lerp(CONFIG.startRadius, 0, t)}px`);
+                root.setProperty('--shadow-y', `${lerp(0, CONFIG.shadowY, t)}px`);
+                root.setProperty('--shadow-blur', `${lerp(0, CONFIG.shadowBlur, t)}px`);
+                root.setProperty('--shadow-opacity', String(lerp(0, CONFIG.shadowOpacity, t)));
+                for (let i = 0; i < revealEls.length; i++) {
+                    const el = revealEls[i];
+                    const start = CONFIG.revealStart + i * CONFIG.revealStagger;
+                    const rt = clamp01((t - start) / CONFIG.revealDuration);
+                    const y = lerp(CONFIG.revealY, 0, rt);
+                    el.style.transform = `translate3d(0, ${y}px, 0)`;
+                    el.style.opacity = String(rt);
+                }
+                if (t <= 0) {
+                    for (const el of revealEls) {
+                        el.style.transform = `translate3d(0, ${CONFIG.revealY}px, 0)`;
+                        el.style.opacity = '0';
+                    }
+                }
+            };
+            const onScroll = () => {
+                if (ticking) return;
+                ticking = true;
+                requestAnimationFrame(update);
+            };
+            window.addEventListener('scroll', onScroll, { passive: true });
+            window.addEventListener('resize', onScroll);
+            update();
+        })();
+    </script>
+</body>
+
+</html>
