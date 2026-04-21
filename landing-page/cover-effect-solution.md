@@ -133,18 +133,17 @@ padding 讓 stage 外觀變高了，**但 sticky 的 containing block 只看 con
 
 ## 七、驗證
 
-用 playwright 做的自動化驗證，在三種高度下都跑過：
+用 playwright 做的自動化驗證，把同一份 `dev-cover-dynamic.html` 在兩種不同內容長度下跑過：
 
 | 場景 | dark 高度 | sticky 啟動點 | cover 完成點 |
 |---|---|---|---|
-| 固定 100vh | 800px | scroll=0 | scroll=800 |
-| 固定 1500px | 1500px | scroll=700 | scroll=1500 |
-| 動態少內容 | 984px | scroll=184 | scroll=984 |
-| 動態多內容 | 1524px | scroll=724 | scroll=1524 |
+| 少量內容 | 984px | scroll=184 | scroll=984 |
+| 追加內容 | 1524px | scroll=724 | scroll=1524 |
 
-所有場景下：
+兩種場景下：
 - `dark.layout.bottom` 在 sticky 期間都被釘在 viewport.bottom = 800 ✓
 - `light.rect.top` 從 800 遞減到 0，動畫進度對齊 ✓
+- `ResizeObserver` 自動把 `--dark-h` 同步成新值，sticky 觸發點、cover 完成點全部自動重算 ✓
 - un-scaled layout 還原算回去完全符合預期 ✓
 
 ---
@@ -153,11 +152,8 @@ padding 讓 stage 外觀變高了，**但 sticky 的 containing block 只看 con
 
 | 檔案 | 用途 |
 |---|---|
-| `dev-cover-dynamic.html` | **最終方案**，動態高度版，可直接交付研發 |
-| `dev-cover-fixed.html` | 固定高度參考版（dark = 1500px 硬寫）|
-| `cover-demo.html` | 最早的 100vh 極簡版 |
-| `flex-squeeze-demo.html` | `flex:1 + min-height:0` 示範（另一主題，解釋「源代碼內容超過 100vh 但視覺裝得下」） |
-| `index.html` | 目前官網落地的完整 concept（使用 GSAP + ScrollTrigger + Lenis）|
+| `dev-cover-dynamic.html` | 隔離的 dark→light cover 原型，動態高度版，可直接交付研發 |
+| `index.html` | 目前官網落地的完整 concept（使用 GSAP + ScrollTrigger + Lenis 做 4 段 cover）|
 
 ---
 

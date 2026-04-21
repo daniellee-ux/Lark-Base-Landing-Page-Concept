@@ -117,12 +117,8 @@ Total document height is 400vh — 3 transitions × 1vh of scroll each, plus 1vh
 ```
 .
 ├── index.html                  # main concept — single-file, all 4 transitions, Tweakpane panel
-├── cover-effect-solution.md    # technical writeup of the dark→light cover pattern
-│
-├── cover-demo.html             # isolated dark=100vh minimal demo (the classic pattern)
-├── dev-cover-fixed.html        # isolated dark=1500px fixed-height case (negative sticky top)
-├── dev-cover-dynamic.html      # isolated dynamic-height case (--dark-h synced via ResizeObserver)
-└── flex-squeeze-demo.html      # adjacent: `flex:1 + min-height:0` squeeze trick explainer
+├── dev-cover-dynamic.html      # isolated dark→light cover prototype (dynamic-height, ResizeObserver-driven)
+└── cover-effect-solution.md    # technical writeup of the dark→light cover pattern
 ```
 
-`index.html` is the polished concept. The `cover-*` / `dev-*` files are isolated sandboxes from the debugging of the sticky cover mechanism — each strips the concept down to one dark→light transition at a single complexity level, for clarity and as regression scaffolding. See the markdown doc for which file corresponds to which case.
+`index.html` is the polished concept. `dev-cover-dynamic.html` strips it down to one dark→light transition with a dynamic-height hero, as the reference implementation to hand to engineering. The markdown doc explains the mechanism and the pitfalls encountered along the way.
