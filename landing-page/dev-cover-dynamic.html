@@ -115,6 +115,13 @@
         .card-title { font-weight: 600; font-size: 14px; margin-bottom: 6px; }
         .card-desc { font-size: 13px; color: rgba(0, 0, 0, 0.58); line-height: 1.5; }
 
+        /* 初始態：在 JS 第一次跑之前避免閃現；JS 會接管後續差值 */
+        [data-reveal] {
+            opacity: 0;
+            transform: translate3d(0, 28px, 0);
+            will-change: opacity, transform;
+        }
+
         @media (max-width: 860px) {
             .title { font-size: 44px; }
             .cards { grid-template-columns: 1fr; }
@@ -186,8 +193,10 @@
             const CONFIG = {
                 scale: 0.93, opacity: 0.55, blur: 4, radius: 20,
                 startRadius: 28, shadowY: -28, shadowBlur: 90, shadowOpacity: 0.55,
-                revealStart: 0.2, revealStagger: 0.06, revealDuration: 0.25, revealY: 22,
+                revealStart: 0.2, revealStagger: 0.05, revealDuration: 0.3, revealY: 28,
             };
+            // 對齊 index.html 的 power3.out（1 - (1-t)^3）
+            const easeOutPower3 = (t) => 1 - Math.pow(1 - t, 3);
             const revealEls = Array.from(light.querySelectorAll('[data-reveal]'));
             let ticking = false;
             const update = () => {
@@ -207,16 +216,11 @@
                 for (let i = 0; i < revealEls.length; i++) {
                     const el = revealEls[i];
                     const start = CONFIG.revealStart + i * CONFIG.revealStagger;
-                    const rt = clamp01((t - start) / CONFIG.revealDuration);
-                    const y = lerp(CONFIG.revealY, 0, rt);
+                    const raw = clamp01((t - start) / CONFIG.revealDuration);
+                    const eased = easeOutPower3(raw);                       // ← 緩出曲線
+                    const y = lerp(CONFIG.revealY, 0, eased);
                     el.style.transform = `translate3d(0, ${y}px, 0)`;
-                    el.style.opacity = String(rt);
-                }
-                if (t <= 0) {
-                    for (const el of revealEls) {
-                        el.style.transform = `translate3d(0, ${CONFIG.revealY}px, 0)`;
-                        el.style.opacity = '0';
-                    }
+                    el.style.opacity = String(eased);
                 }
             };
             const onScroll = () => {

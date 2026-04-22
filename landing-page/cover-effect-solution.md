@@ -106,6 +106,93 @@ const t = clamp01((vh - light.rect.top) / vh);  // 0 → 1 的進度
 
 ---
 
+## 五·五、light 內容的進場漸入（reveal）
+
+cover 動畫的「後半段」通常還要配一組 light 裡面的元素依序 fade-in + y 位移，避免白色區域「光溜溜地蓋上去」。這部分跟 cover 機制完全解耦，但用同一個 `t` 就能驅動。
+
+### 實作
+
+HTML 在要進場的元素上標 `data-reveal`：
+
+```html
+<div class="light">
+  <h2 data-reveal>Built for every kind of work</h2>
+  <p data-reveal>...</p>
+  <div class="cards">
+    <div class="card" data-reveal>...</div>
+    <div class="card" data-reveal>...</div>
+    <div class="card" data-reveal>...</div>
+  </div>
+</div>
+```
+
+CSS 給一個初始態，避免 JS 第一次跑之前元素閃現一下：
+
+```css
+[data-reveal] {
+  opacity: 0;
+  transform: translate3d(0, 28px, 0);
+  will-change: opacity, transform;
+}
+```
+
+JS 用同一個 cover 進度 `t` 分派給每個元素，加 stagger 和緩出曲線：
+
+```js
+const CONFIG = {
+  revealStart:    0.2,   // t 到這個進度才開始 reveal（cover 先跑 20%）
+  revealStagger:  0.05,  // 元素之間的間隔
+  revealDuration: 0.3,   // 每個元素的淡入長度（在 t 軸上）
+  revealY:        28,    // 初始 y 位移（px）
+};
+
+// 對齊 GSAP 的 power3.out
+const easeOutPower3 = (t) => 1 - Math.pow(1 - t, 3);
+
+const revealEls = Array.from(light.querySelectorAll('[data-reveal]'));
+
+for (let i = 0; i < revealEls.length; i++) {
+  const start  = CONFIG.revealStart + i * CONFIG.revealStagger;
+  const raw    = clamp01((t - start) / CONFIG.revealDuration);
+  const eased  = easeOutPower3(raw);
+  const y      = lerp(CONFIG.revealY, 0, eased);
+  revealEls[i].style.transform = `translate3d(0, ${y}px, 0)`;
+  revealEls[i].style.opacity   = String(eased);
+}
+```
+
+### 為什麼要 easing（不能用純 lerp）
+
+線性差值會讓 opacity 和 y 同速變化，感覺生硬——像一個匀速從下面滑到定位的方塊。`power3.out`（`1 - (1-t)^3`）頭快尾慢：前半段快速出現，後半段「減速穩落到位」，整體感覺像真的有重量落地。
+
+這是跟 GSAP timeline + `power3.out` 的效果對齊——用手寫 rAF 時必須顯式把緩出函數寫進去，不然會失去 index.html 那版本的質感。
+
+### 時序
+
+假設 `revealStart=0.2, revealStagger=0.05, revealDuration=0.3`，5 個元素：
+
+| cover 進度 t | 元素狀態 |
+|---|---|
+| 0 → 0.2 | 所有元素 opacity=0（cover 先自己跑一段）|
+| 0.2 → 0.5 | el[0] 淡入（完成於 0.5）|
+| 0.25 → 0.55 | el[1] 淡入 |
+| ... | 依 stagger 0.05 遞進 |
+| 0.4 → 0.7 | el[4] 淡入（最後一個完成於 0.7）|
+| > 0.7 | 全部穩定 opacity=1, y=0 |
+
+所以 cover 後 30% 的滾動距離裡 reveal 都是全部到位的狀態，讓白色區自然銜接到後續的正文滾動。
+
+### 可調參數對照
+
+| 變數 | 小值 | 大值 |
+|---|---|---|
+| `revealStart` | 0（立刻開始） | 0.5（等 cover 跑一半才開始）|
+| `revealStagger` | 0.02（齊刷刷）| 0.1（明顯一個個來） |
+| `revealDuration` | 0.2（俐落）| 0.5（從容）|
+| `revealY` | 0（純 fade）| 40+（明顯上升感）|
+
+---
+
 ## 六、走過的坑（踩過才寫下來）
 
 ### 坑 1：`margin-top: 0vh`（研發原版的 bug）
