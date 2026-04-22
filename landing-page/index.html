@@ -12,6 +12,13 @@
 
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  /* AI section dynamic height (synced by JS via ResizeObserver) */
+  --dark-h: 100vh;
+  /* Light background / foreground colors (driven by cover timeline) */
+  --light-bg-r: 255; --light-bg-g: 255; --light-bg-b: 255;
+  --light-fg-r: 17;  --light-fg-g: 17;  --light-fg-b: 17;
+}
 html, body {
   background: #0a0a12;
   overscroll-behavior: none;
@@ -109,15 +116,18 @@ img { max-width: 100%; display: block; }
 }
 
 /* ── Cover stage (AI sticks, product slides up to cover) ── */
+/* Dynamic height: stage = ai-section-height + 100vh (sticky range) */
 .ai-wrap {
   position: relative;
-  height: 200vh;                 /* sticky range = 100vh */
+  height: calc(var(--dark-h) + 100vh);
   z-index: 1;
 }
 #s-ai {
   position: sticky;
-  top: 0;
-  height: 100vh;
+  /* Negative top when AI content > 100vh: lets user scroll through full content,
+     then pins bottom-of-section to bottom-of-viewport. Equals top:0 when AI = 100vh. */
+  top: calc(100vh - var(--dark-h));
+  min-height: 100vh;
   will-change: transform, filter, opacity, border-radius;
   transform-origin: center center;
   backface-visibility: hidden;
@@ -499,8 +509,8 @@ img { max-width: 100%; display: block; }
    Product Tabs (built for every kind of work)
 ══════════════════════════════════════════════════ */
 #s-product {
-  background: #f7f7f4;
-  color: #111;
+  background: rgb(var(--light-bg-r), var(--light-bg-g), var(--light-bg-b));
+  color: rgb(var(--light-fg-r), var(--light-fg-g), var(--light-fg-b));
   padding: 96px 0 80px;
   border-top-left-radius: 28px;
   border-top-right-radius: 28px;
@@ -1598,8 +1608,20 @@ img { max-width: 100%; display: block; }
     shadowY: -28, shadowBlur: 90, shadowOpacity: 0.55, startRadius: 28, slideEase: 'none',
     revealStart: 0.2, revealStagger: 0.05, revealDuration: 0.3, revealY: 28, revealEase: 'power3.out',
     lenisDuration: 1.15, scrub: 1,
+
+    // Light background sweep (dark → white inside the cover window)
+    bgEnabled:       true,
+    bgStart:         0.1,
+    bgDuration:      0.2,
+    bgFrom:          { r: 10,  g: 10,  b: 18  },
+    bgTo:            { r: 255, g: 255, b: 255 },
+    fgMode:          'delay',   // 'opacity' | 'reverse' | 'delay'
+    fgFrom:          { r: 255, g: 255, b: 255 },
+    fgTo:            { r: 17,  g: 17,  b: 17  },
+    shadowFollowsBg: true,
   };
-  const CONFIG = { ...DEFAULTS };
+  // Deep-clone so colour objects are not shared between CONFIG and DEFAULTS
+  const CONFIG = JSON.parse(JSON.stringify(DEFAULTS));
 
   const EASES = {
     'linear':         'none',
@@ -1610,6 +1632,12 @@ img { max-width: 100%; display: block; }
     'back.out(1.2)':  'back.out(1.2)',
     'back.out(1.7)':  'back.out(1.7)',
   };
+
+  const lerpRgb = (a, b, t) => ({
+    r: Math.round(a.r + (b.r - a.r) * t),
+    g: Math.round(a.g + (b.g - a.g) * t),
+    b: Math.round(a.b + (b.b - a.b) * t),
+  });
 
   // ─── Lenis smooth scroll ───
   const lenis = new Lenis({
@@ -1629,11 +1657,37 @@ img { max-width: 100%; display: block; }
   const nav       = document.getElementById('nav');
   const aiSection = document.getElementById('s-ai');
   const product   = document.getElementById('s-product');
+  const rootEl    = document.documentElement;
+
+  // ─── Dynamic AI section height ───
+  // AI section uses min-height:100vh but can grow if content exceeds viewport.
+  // --dark-h feeds .ai-wrap height and #s-ai sticky top so the cover always
+  // triggers when the last screen of AI content meets the viewport bottom.
+  const syncDarkHeight = () => {
+    rootEl.style.setProperty('--dark-h', aiSection.offsetHeight + 'px');
+  };
+  syncDarkHeight();
+  new ResizeObserver(() => {
+    syncDarkHeight();
+    ScrollTrigger.refresh();
+  }).observe(aiSection);
 
   // ─── Covering transition (driven by AI's sticky range) ───
   // AI is position:sticky for 100vh; product has margin-top:-100vh + z-index:2
   // so it naturally scrolls up over AI. Scrub only animates visual properties:
   // AI recede (scale/blur/opacity/radius), product border-radius, and shadow.
+  // Apply bg variables directly (used by reset + bgEnabled=false)
+  const setLightBg = (c) => {
+    rootEl.style.setProperty('--light-bg-r', c.r);
+    rootEl.style.setProperty('--light-bg-g', c.g);
+    rootEl.style.setProperty('--light-bg-b', c.b);
+  };
+  const setLightFg = (c) => {
+    rootEl.style.setProperty('--light-fg-r', c.r);
+    rootEl.style.setProperty('--light-fg-g', c.g);
+    rootEl.style.setProperty('--light-fg-b', c.b);
+  };
+
   let coverTween = null;
   function buildTransition() {
     if (coverTween) {
@@ -1657,6 +1711,24 @@ img { max-width: 100%; display: block; }
       opacity: 0,
     });
 
+    // Reset light background + foreground to starting colours
+    if (CONFIG.bgEnabled) {
+      setLightBg(CONFIG.bgFrom);
+      setLightFg(CONFIG.fgMode === 'reverse' ? CONFIG.fgFrom : CONFIG.fgTo);
+    } else {
+      setLightBg(CONFIG.bgTo);
+      setLightFg(CONFIG.fgTo);
+    }
+
+    // Delay mode: hold reveal until background is nearly finished sweeping
+    let effectiveRevealStart = CONFIG.revealStart;
+    if (CONFIG.bgEnabled && CONFIG.fgMode === 'delay') {
+      effectiveRevealStart = Math.max(
+        CONFIG.revealStart,
+        CONFIG.bgStart + CONFIG.bgDuration * 0.8
+      );
+    }
+
     coverTween = gsap.timeline({
       scrollTrigger: {
         trigger: aiSection,
@@ -1676,20 +1748,44 @@ img { max-width: 100%; display: block; }
       duration: 1,
     }, 0);
 
+    // Product radius sweeps the whole cover (existing behaviour)
     coverTween.to(product, {
       borderTopLeftRadius: 0,
       borderTopRightRadius: 0,
-      boxShadow: `0 ${CONFIG.shadowY}px ${CONFIG.shadowBlur}px rgba(0,0,0,${CONFIG.shadowOpacity})`,
       ease: CONFIG.slideEase,
       duration: 1,
     }, 0);
+
+    // Shadow: follows bg progress when shadowFollowsBg, else runs the full cover
+    const followBg = CONFIG.bgEnabled && CONFIG.shadowFollowsBg;
+    coverTween.to(product, {
+      boxShadow: `0 ${CONFIG.shadowY}px ${CONFIG.shadowBlur}px rgba(0,0,0,${CONFIG.shadowOpacity})`,
+      ease: followBg ? 'power2.inOut' : CONFIG.slideEase,
+      duration: followBg ? CONFIG.bgDuration : 1,
+    }, followBg ? CONFIG.bgStart : 0);
+
+    // Background colour sweep (and foreground if reverse mode)
+    if (CONFIG.bgEnabled) {
+      const bgObj = { t: 0 };
+      coverTween.to(bgObj, {
+        t: 1,
+        duration: CONFIG.bgDuration,
+        ease: 'power2.inOut',
+        onUpdate: () => {
+          setLightBg(lerpRgb(CONFIG.bgFrom, CONFIG.bgTo, bgObj.t));
+          if (CONFIG.fgMode === 'reverse') {
+            setLightFg(lerpRgb(CONFIG.fgFrom, CONFIG.fgTo, bgObj.t));
+          }
+        },
+      }, CONFIG.bgStart);
+    }
 
     coverTween.to(product.querySelectorAll('[data-reveal]'), {
       y: 0, opacity: 1,
       stagger: CONFIG.revealStagger,
       duration: CONFIG.revealDuration,
       ease: CONFIG.revealEase,
-    }, CONFIG.revealStart);
+    }, effectiveRevealStart);
 
     ScrollTrigger.refresh();
   }
@@ -1758,6 +1854,15 @@ img { max-width: 100%; display: block; }
     revealEase:     '<b>Easing curve for each element.</b> power3.out = modern, back.out = slight elastic overshoot.',
     lenisDuration:  '<b>Lenis catch-up time from wheel input to target (seconds).</b> 0.8 = direct, 1.5 = clear inertia, 2+ = floaty drift.',
     scrub:          '<b>GSAP ScrollTrigger scrub lag.</b> 0 = instant response (1:1 with scroll), 1–2 = animation lags behind by 1–2 seconds (rubber-band feel).',
+    bgEnabled:       '<b>Master switch for the light background sweep.</b> Off = product starts white from the moment it enters the viewport.',
+    bgStart:         '<b>How far into the cover timeline the light background starts changing colour.</b> 0 = sweeps from the first pixel of scroll, 0.4 = holds the dark colour through most of the cover before fading.',
+    bgDuration:      '<b>How long the background takes to sweep from bgFrom to bgTo (in timeline fraction).</b> 0.1 = a quick flash, 0.6 = a slow bloom.',
+    bgFrom:          '<b>Starting colour of the light region.</b> Matching #0a0a12 (body colour) makes cover look like space gradually brightening instead of a sheet pasted over.',
+    bgTo:            '<b>Finishing colour of the light region.</b> #fff matches classic "dark-to-light reveal"; the original product section was #f7f7f4 — set here to preserve it.',
+    fgMode:          '<b>How text/border colour behaves during the dark-to-light phase.</b> opacity = text is always dark, fades in via reveal. delay = same, but reveal is pushed past the bg sweep so content lands on a clean white surface. reverse = text colour lerps from fgFrom to fgTo alongside the bg.',
+    fgFrom:          '<b>Starting text colour (reverse mode only).</b> White on black background = readable from frame 1; ignored in opacity/delay modes.',
+    fgTo:            '<b>Final text colour.</b> Used as the resting foreground colour in all modes.',
+    shadowFollowsBg: '<b>Sync the product drop-shadow with the bg sweep.</b> On = shadow is invisible while the bg is dark (black shadow on black has no contrast), fades in as it brightens. Off = shadow runs the full cover like the rest of the slide.',
   };
 
   const bind = (folder, key, opts, onChange = scheduleRebuild) => {
@@ -1793,10 +1898,24 @@ img { max-width: 100%; display: block; }
   });
   bind(f4, 'scrub', { min: 0, max: 3, step: 0.1 });
 
+  const f5 = pane.addFolder({ title: 'Light background sweep' });
+  bind(f5, 'bgEnabled',       { label: 'enabled' });
+  bind(f5, 'bgStart',         { min: 0,   max: 0.8, step: 0.02, label: 'start' });
+  bind(f5, 'bgDuration',      { min: 0.1, max: 0.8, step: 0.02, label: 'duration' });
+  bind(f5, 'bgFrom',          { picker: 'inline', color: { type: 'int' }, label: 'from' });
+  bind(f5, 'bgTo',            { picker: 'inline', color: { type: 'int' }, label: 'to' });
+  bind(f5, 'fgMode',          {
+    options: { 'opacity (simple)': 'opacity', 'reverse (white→black text)': 'reverse', 'delay (hold reveal)': 'delay' },
+    label: 'fg mode',
+  });
+  bind(f5, 'fgFrom',          { picker: 'inline', color: { type: 'int' }, label: 'fg from' });
+  bind(f5, 'fgTo',            { picker: 'inline', color: { type: 'int' }, label: 'fg to' });
+  bind(f5, 'shadowFollowsBg', { label: 'shadow → bg' });
+
   pane.addBlade({ view: 'separator' });
 
   pane.addButton({ title: 'Reset to defaults' }).on('click', () => {
-    Object.assign(CONFIG, DEFAULTS);
+    Object.assign(CONFIG, JSON.parse(JSON.stringify(DEFAULTS)));
     pane.refresh();
     lenis.options.duration = CONFIG.lenisDuration;
     buildTransition();
@@ -1813,7 +1932,10 @@ img { max-width: 100%; display: block; }
 
   pane.addButton({ title: 'Copy config' }).on('click', () => {
     const lines = Object.entries(CONFIG).map(([k, v]) => {
-      const val = typeof v === 'string' ? `'${v}'` : v;
+      let val;
+      if (typeof v === 'string') val = `'${v}'`;
+      else if (v && typeof v === 'object' && 'r' in v) val = `{ r: ${v.r}, g: ${v.g}, b: ${v.b} }`;
+      else val = v;
       return `  ${k}: ${val},`;
     });
     const text = `const CONFIG = {\n${lines.join('\n')}\n};`;
