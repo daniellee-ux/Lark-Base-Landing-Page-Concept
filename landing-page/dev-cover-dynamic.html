@@ -17,6 +17,9 @@
             --shadow-opacity: 0;
             /* ← dark 實際高度由 JS 用 ResizeObserver 寫入；預設 100vh 當 fallback */
             --dark-h: 100vh;
+            /* light 背景/前景顏色（由 JS 在 cover 過程驅動，預設是 cover 完成後的白底黑字） */
+            --light-bg-r: 255; --light-bg-g: 255; --light-bg-b: 255;
+            --light-fg-r: 17;  --light-fg-g: 17;  --light-fg-b: 17;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -99,21 +102,35 @@
             margin-top: -100vh;   /* ← 永遠是 -100vh，跟 dark 高度無關 */
             width: 100%;
             min-height: 1500px;
-            background: #fff;
-            color: #111;
+            background: rgb(var(--light-bg-r), var(--light-bg-g), var(--light-bg-b));
+            color: rgb(var(--light-fg-r), var(--light-fg-g), var(--light-fg-b));
             border-top-left-radius: var(--light-radius);
             border-top-right-radius: var(--light-radius);
             box-shadow: 0 var(--shadow-y) var(--shadow-blur) rgba(0, 0, 0, var(--shadow-opacity));
-            will-change: border-radius, box-shadow;
+            will-change: border-radius, box-shadow, background;
         }
 
         .light-inner { max-width: 980px; margin: 0 auto; padding: 80px 24px 160px; }
         .light h2 { font-size: 40px; letter-spacing: -0.6px; margin-bottom: 10px; }
-        .light p { color: rgba(0, 0, 0, 0.62); line-height: 1.7; font-size: 16px; margin-bottom: 18px; }
+        .light p {
+            color: rgba(var(--light-fg-r), var(--light-fg-g), var(--light-fg-b), 0.62);
+            line-height: 1.7; font-size: 16px; margin-bottom: 18px;
+        }
         .cards { margin-top: 28px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
-        .card { border-radius: 14px; border: 1px solid rgba(0, 0, 0, 0.08); background: linear-gradient(180deg, rgba(0, 0, 0, 0.02), rgba(0, 0, 0, 0)); padding: 16px 16px 18px; }
+        .card {
+            border-radius: 14px;
+            border: 1px solid rgba(var(--light-fg-r), var(--light-fg-g), var(--light-fg-b), 0.08);
+            background: linear-gradient(180deg,
+                rgba(var(--light-fg-r), var(--light-fg-g), var(--light-fg-b), 0.02),
+                rgba(var(--light-fg-r), var(--light-fg-g), var(--light-fg-b), 0));
+            padding: 16px 16px 18px;
+        }
         .card-title { font-weight: 600; font-size: 14px; margin-bottom: 6px; }
-        .card-desc { font-size: 13px; color: rgba(0, 0, 0, 0.58); line-height: 1.5; }
+        .card-desc {
+            font-size: 13px;
+            color: rgba(var(--light-fg-r), var(--light-fg-g), var(--light-fg-b), 0.58);
+            line-height: 1.5;
+        }
 
         /* 初始態：在 JS 第一次跑之前避免閃現；JS 會接管後續差值 */
         [data-reveal] {
@@ -125,6 +142,32 @@
         @media (max-width: 860px) {
             .title { font-size: 44px; }
             .cards { grid-template-columns: 1fr; }
+        }
+
+        /* Tweakpane 控制面板容器 */
+        #tp-container {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            width: 300px;
+            z-index: 999;
+            font-family: -apple-system, monospace;
+        }
+        /* 折疊按鈕（手機或遮擋時點一下收起來） */
+        #tp-toggle {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            z-index: 1000;
+            padding: 6px 12px;
+            background: rgba(0, 0, 0, 0.75);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            backdrop-filter: blur(8px);
+            display: none;   /* 預設 tweakpane 有自己的折疊，只在 reset 時才露出來 */
         }
     </style>
 </head>
@@ -176,6 +219,10 @@
         </div>
     </div>
 
+    <!-- Tweakpane：調試控制面板（交付研發時移除這一段 + 下方的 UI init code） -->
+    <script src="https://cdn.jsdelivr.net/npm/tweakpane@3.1.10/dist/tweakpane.min.js"></script>
+    <div id="tp-container"></div>
+
     <script>
         (() => {
             const dark = document.getElementById('dark');
@@ -191,12 +238,40 @@
             const clamp01 = (v) => Math.min(1, Math.max(0, v));
             const lerp = (a, b, t) => a + (b - a) * t;
             const CONFIG = {
+                // Cover 動畫（dark 後退 + light 爬上）
                 scale: 0.93, opacity: 0.55, blur: 4, radius: 20,
                 startRadius: 28, shadowY: -28, shadowBlur: 90, shadowOpacity: 0.55,
+
+                // Reveal（light 內部元素依序進場）
                 revealStart: 0.2, revealStagger: 0.05, revealDuration: 0.3, revealY: 28,
+
+                // ─── light 背景轉色（黑→白）───────────────────────────
+                bgEnabled:   true,                        // 總開關：關掉就退回純白 light
+                bgStart:     0.1,                         // t 到這個進度才開始轉色
+                bgDuration:  0.2,                         // 轉色走多長（t=0.1 → 0.3 完成，刷色節奏較快）
+                bgFrom:      { r: 10, g: 10, b: 18 },     // 起始色（跟 dark body 一致：#0a0a12）
+                bgTo:        { r: 255, g: 255, b: 255 },  // 結束色（純白）
+
+                // ─── 文字色處理（黑底 → 白底過渡期的文字表現）─────────
+                // 'opacity'  → 文字色始終是 fgTo (#111)；只靠 reveal opacity 控制顯現。最簡單、最不容易出錯。
+                // 'reverse'  → 文字色從 fgFrom (白) 漸變到 fgTo (黑)；戲劇性強，但過程會經過灰色中段。
+                // 'delay'    → 文字色始終是 fgTo；但 reveal 被延後到背景幾乎變白才開始（靠 revealStart 自動推遲）。
+                fgMode:      'delay',
+                fgFrom:      { r: 255, g: 255, b: 255 },  // reverse 模式的起始色（白文字）
+                fgTo:        { r: 17, g: 17, b: 17 },     // 終色（#111，也等於純白底預設文字色）
+
+                // ─── 陰影跟著背景 ─────────────────────────────────────
+                // true = 陰影 opacity 跟 bg 進度同步增強（黑底時無陰影，白底時到 shadowOpacity 值）
+                // false = 陰影走自己的 t 進度（cover 全程線性）
+                shadowFollowsBg: true,
             };
-            // 對齊 index.html 的 power3.out（1 - (1-t)^3）
-            const easeOutPower3 = (t) => 1 - Math.pow(1 - t, 3);
+            const easeOutCubic  = (t) => 1 - Math.pow(1 - t, 3);
+            const easeInOutCubic = (t) => t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t + 2, 3) / 2;
+            const lerpRgb = (a, b, t) => ({
+                r: Math.round(lerp(a.r, b.r, t)),
+                g: Math.round(lerp(a.g, b.g, t)),
+                b: Math.round(lerp(a.b, b.b, t)),
+            });
             const revealEls = Array.from(light.querySelectorAll('[data-reveal]'));
             let ticking = false;
             const update = () => {
@@ -205,19 +280,57 @@
                 const vh = window.innerHeight || 1;
                 const t = clamp01((vh - rect.top) / vh);
                 const root = document.documentElement.style;
-                root.setProperty('--ai-scale', String(lerp(1, CONFIG.scale, t)));
-                root.setProperty('--ai-opacity', String(lerp(1, CONFIG.opacity, t)));
-                root.setProperty('--ai-blur', `${lerp(0, CONFIG.blur, t)}px`);
-                root.setProperty('--ai-radius', `${lerp(0, CONFIG.radius, t)}px`);
-                root.setProperty('--light-radius', `${lerp(CONFIG.startRadius, 0, t)}px`);
-                root.setProperty('--shadow-y', `${lerp(0, CONFIG.shadowY, t)}px`);
+
+                // Cover 動畫（dark 後退 + light 圓角 + 陰影位置/模糊）
+                root.setProperty('--ai-scale',    String(lerp(1, CONFIG.scale, t)));
+                root.setProperty('--ai-opacity',  String(lerp(1, CONFIG.opacity, t)));
+                root.setProperty('--ai-blur',     `${lerp(0, CONFIG.blur, t)}px`);
+                root.setProperty('--ai-radius',   `${lerp(0, CONFIG.radius, t)}px`);
+                root.setProperty('--light-radius',`${lerp(CONFIG.startRadius, 0, t)}px`);
+                root.setProperty('--shadow-y',    `${lerp(0, CONFIG.shadowY, t)}px`);
                 root.setProperty('--shadow-blur', `${lerp(0, CONFIG.shadowBlur, t)}px`);
-                root.setProperty('--shadow-opacity', String(lerp(0, CONFIG.shadowOpacity, t)));
+
+                // light 背景/前景轉色
+                let bgProgress = 1;                                    // bgEnabled=false 時預設全進（白底）
+                if (CONFIG.bgEnabled) {
+                    const rawBg = clamp01((t - CONFIG.bgStart) / CONFIG.bgDuration);
+                    bgProgress  = easeInOutCubic(rawBg);
+                    const c = lerpRgb(CONFIG.bgFrom, CONFIG.bgTo, bgProgress);
+                    root.setProperty('--light-bg-r', c.r);
+                    root.setProperty('--light-bg-g', c.g);
+                    root.setProperty('--light-bg-b', c.b);
+                }
+                // 前景色（文字 / border）處理
+                if (CONFIG.bgEnabled && CONFIG.fgMode === 'reverse') {
+                    const c = lerpRgb(CONFIG.fgFrom, CONFIG.fgTo, bgProgress);
+                    root.setProperty('--light-fg-r', c.r);
+                    root.setProperty('--light-fg-g', c.g);
+                    root.setProperty('--light-fg-b', c.b);
+                } else {
+                    // opacity / delay 模式：文字色始終是終色
+                    root.setProperty('--light-fg-r', CONFIG.fgTo.r);
+                    root.setProperty('--light-fg-g', CONFIG.fgTo.g);
+                    root.setProperty('--light-fg-b', CONFIG.fgTo.b);
+                }
+
+                // 陰影 opacity：黑底時不可見，白底時到位
+                const shadowT = (CONFIG.bgEnabled && CONFIG.shadowFollowsBg) ? bgProgress : t;
+                root.setProperty('--shadow-opacity', String(lerp(0, CONFIG.shadowOpacity, shadowT)));
+
+                // delay 模式：整組 reveal 被推到背景幾乎轉完
+                let effectiveRevealStart = CONFIG.revealStart;
+                if (CONFIG.bgEnabled && CONFIG.fgMode === 'delay') {
+                    effectiveRevealStart = Math.max(
+                        CONFIG.revealStart,
+                        CONFIG.bgStart + CONFIG.bgDuration * 0.8
+                    );
+                }
+
                 for (let i = 0; i < revealEls.length; i++) {
                     const el = revealEls[i];
-                    const start = CONFIG.revealStart + i * CONFIG.revealStagger;
+                    const start = effectiveRevealStart + i * CONFIG.revealStagger;
                     const raw = clamp01((t - start) / CONFIG.revealDuration);
-                    const eased = easeOutPower3(raw);                       // ← 緩出曲線
+                    const eased = easeOutCubic(raw);
                     const y = lerp(CONFIG.revealY, 0, eased);
                     el.style.transform = `translate3d(0, ${y}px, 0)`;
                     el.style.opacity = String(eased);
@@ -231,6 +344,55 @@
             window.addEventListener('scroll', onScroll, { passive: true });
             window.addEventListener('resize', onScroll);
             update();
+
+            // ────────────────────────────────────────────────────────────
+            // Tweakpane 控制面板 — 所有欄位改動都會即時觸發 update()
+            // ────────────────────────────────────────────────────────────
+            if (window.Tweakpane) {
+                const pane = new Tweakpane.Pane({
+                    container: document.getElementById('tp-container'),
+                    title: 'Cover controls',
+                });
+                const onChange = () => { ticking = true; requestAnimationFrame(update); };
+
+                // Cover 動畫
+                const fCover = pane.addFolder({ title: 'Cover (dark recede)' });
+                fCover.addInput(CONFIG, 'scale',         { min: 0.8, max: 1,    step: 0.01 }).on('change', onChange);
+                fCover.addInput(CONFIG, 'opacity',       { min: 0,   max: 1,    step: 0.01 }).on('change', onChange);
+                fCover.addInput(CONFIG, 'blur',          { min: 0,   max: 12,   step: 0.5  }).on('change', onChange);
+                fCover.addInput(CONFIG, 'radius',        { min: 0,   max: 40,   step: 1    }).on('change', onChange);
+                fCover.addInput(CONFIG, 'startRadius',   { min: 0,   max: 48,   step: 1    }).on('change', onChange);
+                fCover.addInput(CONFIG, 'shadowY',       { min: -60, max: 0,    step: 1    }).on('change', onChange);
+                fCover.addInput(CONFIG, 'shadowBlur',    { min: 0,   max: 160,  step: 2    }).on('change', onChange);
+                fCover.addInput(CONFIG, 'shadowOpacity', { min: 0,   max: 1,    step: 0.01 }).on('change', onChange);
+
+                // Reveal
+                const fReveal = pane.addFolder({ title: 'Reveal (light content stagger)' });
+                fReveal.addInput(CONFIG, 'revealStart',    { min: 0,   max: 0.8,  step: 0.02 }).on('change', onChange);
+                fReveal.addInput(CONFIG, 'revealStagger',  { min: 0,   max: 0.15, step: 0.01 }).on('change', onChange);
+                fReveal.addInput(CONFIG, 'revealDuration', { min: 0.1, max: 0.8,  step: 0.02 }).on('change', onChange);
+                fReveal.addInput(CONFIG, 'revealY',        { min: 0,   max: 80,   step: 1    }).on('change', onChange);
+
+                // 背景轉色 + 文字色模式 + 陰影同步
+                const fBg = pane.addFolder({ title: 'Light background sweep' });
+                fBg.addInput(CONFIG, 'bgEnabled').on('change', onChange);
+                fBg.addInput(CONFIG, 'bgStart',    { min: 0,   max: 0.8, step: 0.02 }).on('change', onChange);
+                fBg.addInput(CONFIG, 'bgDuration', { min: 0.1, max: 0.8, step: 0.02 }).on('change', onChange);
+                fBg.addInput(CONFIG, 'bgFrom', { picker: 'inline', color: { type: 'int' } }).on('change', onChange);
+                fBg.addInput(CONFIG, 'bgTo',   { picker: 'inline', color: { type: 'int' } }).on('change', onChange);
+                fBg.addInput(CONFIG, 'fgMode', {
+                    options: { 'opacity (simple)': 'opacity', 'reverse (white→black text)': 'reverse', 'delay (hold reveal)': 'delay' }
+                }).on('change', onChange);
+                fBg.addInput(CONFIG, 'fgFrom', { picker: 'inline', color: { type: 'int' } }).on('change', onChange);
+                fBg.addInput(CONFIG, 'fgTo',   { picker: 'inline', color: { type: 'int' } }).on('change', onChange);
+                fBg.addInput(CONFIG, 'shadowFollowsBg').on('change', onChange);
+
+                // Reset 按鈕
+                pane.addSeparator();
+                pane.addButton({ title: 'Copy config to clipboard' }).on('click', () => {
+                    navigator.clipboard.writeText(JSON.stringify(CONFIG, null, 2));
+                });
+            }
         })();
     </script>
 </body>
