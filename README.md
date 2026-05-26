@@ -7,6 +7,7 @@ Working space for Lark Base website design explorations. Each subfolder is one s
 | Folder | What it explores |
 |---|---|
 | [`landing-page/`](./landing-page) | Scroll-driven 4-section landing page. Premium section-coverage transitions built on GSAP ScrollTrigger + Lenis, with a live Tweakpane config panel for tuning the 16 feel parameters. See its [README](./landing-page/README.md) for the full design + technical breakdown. |
+| [`ai-agent-system/`](./ai-agent-system) | Single-screen Lark Base AI Agent hero page inspired by a dark, cinematic product launch visual with glowing CTA and layered system cards. |
 
 ## How this repo is organized
 

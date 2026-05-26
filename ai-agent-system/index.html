@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lark Base - AI Agent</title>
+<style>
+:root {
+  --bg: #02040a;
+  --panel: rgba(19, 25, 46, 0.78);
+  --line: rgba(255, 255, 255, 0.16);
+  --text: #f4f8ff;
+  --muted: rgba(224, 233, 255, 0.48);
+  --blue: #3b78ff;
+  --blue-2: #87b8ff;
+  --violet: #7c4cff;
+  --green: #7ce66f;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--bg);
+}
+
+body {
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font: inherit;
+}
+
+.page {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% -12%, rgba(28, 91, 255, 0.44), transparent 31rem),
+    radial-gradient(circle at 56% 18%, rgba(31, 72, 170, 0.28), transparent 36rem),
+    linear-gradient(180deg, #071027 0, #02040a 42%, #000 100%);
+}
+
+.page::before {
+  content: "";
+  position: absolute;
+  inset: 70px 0 auto;
+  height: 330px;
+  background-image: radial-gradient(rgba(76, 126, 255, 0.28) 1px, transparent 1px);
+  background-size: 10px 10px;
+  mask-image: radial-gradient(ellipse at center, #000 0 20%, transparent 68%);
+  opacity: 0.58;
+  pointer-events: none;
+}
+
+.page::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, #000 0, transparent 18%, transparent 82%, #000 100%),
+    linear-gradient(180deg, transparent 0 56%, rgba(0, 0, 0, 0.9) 88%, #000 100%);
+  pointer-events: none;
+}
+
+.nav {
+  position: relative;
+  z-index: 5;
+  height: 70px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 max(28px, calc((100vw - 1440px) / 2 + 28px));
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.86), rgba(14, 24, 55, 0.72), rgba(0, 0, 0, 0.88));
+  backdrop-filter: blur(20px);
+}
+
+.brand,
+.nav-links,
+.profile,
+.nav-right {
+  display: flex;
+  align-items: center;
+}
+
+.brand {
+  gap: 12px;
+  min-width: 205px;
+}
+
+.mark {
+  position: relative;
+  width: 31px;
+  height: 31px;
+  transform: rotate(45deg);
+}
+
+.mark span {
+  position: absolute;
+  width: 13px;
+  height: 13px;
+  border-radius: 3px;
+  background: linear-gradient(135deg, #5d38ff, #965dff);
+}
+
+.mark span:nth-child(1) { left: 0; top: 0; }
+.mark span:nth-child(2) { right: 0; top: 0; background: linear-gradient(135deg, #8b54ff, #6a43ff); }
+.mark span:nth-child(3) { left: 0; bottom: 0; background: linear-gradient(135deg, #6a43ff, #834fff); }
+.mark span:nth-child(4) { right: 0; bottom: 0; }
+
+.brand strong {
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+
+.nav-links {
+  gap: clamp(20px, 3vw, 48px);
+  margin-right: auto;
+  margin-left: clamp(24px, 4vw, 70px);
+}
+
+.nav-links a {
+  color: rgba(246, 249, 255, 0.88);
+  font-size: 18px;
+  font-weight: 650;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.caret {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-left: 7px;
+  border-right: 2px solid rgba(246, 249, 255, 0.72);
+  border-bottom: 2px solid rgba(246, 249, 255, 0.72);
+  transform: translateY(-3px) rotate(45deg);
+}
+
+.nav-right {
+  gap: 28px;
+  margin-left: 22px;
+}
+
+.profile {
+  gap: 10px;
+  font-size: 18px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.94);
+}
+
+.avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 3px solid rgba(176, 235, 255, 0.9);
+  background:
+    radial-gradient(circle at 50% 34%, #ffe0cf 0 18%, transparent 19%),
+    radial-gradient(circle at 50% 74%, #1f2434 0 24%, transparent 25%),
+    linear-gradient(145deg, #f7fbff, #cfefff);
+}
+
+.avatar::before {
+  content: "";
+  width: 15px;
+  height: 10px;
+  margin-top: -9px;
+  border-radius: 50% 50% 46% 46%;
+  background: #2a2831;
+}
+
+.nav-cta {
+  border: 0;
+  color: #fff;
+  min-width: 119px;
+  height: 42px;
+  padding: 0 25px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #477dff 0%, #2f68ef 100%);
+  font-size: 16px;
+  font-weight: 750;
+  cursor: pointer;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.26), 0 12px 28px rgba(58, 113, 255, 0.22);
+}
+
+.hero {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: calc(100vh - 70px);
+  padding: 76px 32px 42px;
+  text-align: center;
+}
+
+.hero-copy {
+  position: relative;
+  z-index: 3;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(56px, 5.25vw, 92px);
+  line-height: 1.13;
+  letter-spacing: -0.065em;
+  font-weight: 760;
+}
+
+h1 .line {
+  display: block;
+}
+
+h1 .accent {
+  color: transparent;
+  background: linear-gradient(100deg, #f6fbff 0%, #9ec9ff 38%, #4590ff 80%);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+.subtitle {
+  margin: 22px 0 0;
+  color: rgba(225, 234, 248, 0.42);
+  font-size: 21px;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+}
+
+.hero-action {
+  margin-top: 48px;
+  width: 194px;
+  height: 72px;
+  border: 0;
+  border-radius: 999px;
+  color: #fff;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.22), transparent 45%),
+    linear-gradient(180deg, #2e74ff 0%, #75a4ff 100%);
+  font-size: 26px;
+  font-weight: 760;
+  cursor: pointer;
+  box-shadow:
+    0 19px 46px rgba(55, 122, 255, 0.5),
+    0 0 0 1px rgba(169, 202, 255, 0.42) inset,
+    0 -9px 25px rgba(18, 68, 232, 0.42) inset;
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.hero-action:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 24px 60px rgba(55, 122, 255, 0.62),
+    0 0 0 1px rgba(196, 220, 255, 0.5) inset,
+    0 -9px 25px rgba(18, 68, 232, 0.42) inset;
+}
+
+.cards {
+  position: relative;
+  width: min(980px, 84vw);
+  height: 360px;
+  margin-top: 56px;
+}
+
+.agent-card {
+  position: absolute;
+  top: 36px;
+  overflow: hidden;
+  border: 1px solid rgba(201, 216, 255, 0.22);
+  border-radius: 17px;
+  background: rgba(16, 18, 29, 0.72);
+  box-shadow: 0 48px 90px rgba(0, 0, 0, 0.62);
+}
+
+.agent-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+  background-size: 13px 13px;
+  opacity: 0.45;
+}
+
+.agent-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 30%, rgba(0, 0, 0, 0.58) 100%);
+  pointer-events: none;
+}
+
+.card-left,
+.card-right {
+  width: 369px;
+  height: 241px;
+  top: 72px;
+  opacity: 0.44;
+  filter: blur(1px);
+}
+
+.card-left {
+  left: 0;
+}
+
+.card-right {
+  right: 0;
+}
+
+.card-center {
+  left: 50%;
+  top: 36px;
+  width: 474px;
+  height: 320px;
+  transform: translateX(-50%);
+  z-index: 2;
+  border-color: rgba(223, 232, 255, 0.25);
+  background:
+    radial-gradient(circle at 55% 0%, rgba(64, 113, 255, 0.52), transparent 44%),
+    linear-gradient(135deg, rgba(24, 31, 63, 0.96), rgba(17, 21, 43, 0.9));
+}
+
+.card-center::before {
+  opacity: 0.22;
+}
+
+.center-glow {
+  position: absolute;
+  inset: -34px 44px auto;
+  height: 132px;
+  background: radial-gradient(ellipse, rgba(53, 119, 255, 0.54), transparent 66%);
+  filter: blur(6px);
+}
+
+.agent-badge {
+  position: absolute;
+  left: 61px;
+  bottom: 78px;
+  z-index: 2;
+  width: 82px;
+  height: 82px;
+  display: grid;
+  place-items: center;
+  border-radius: 18px;
+  background: linear-gradient(145deg, #236fff, #7eabff);
+  box-shadow: 0 18px 34px rgba(25, 89, 255, 0.42);
+  transform: rotate(-7deg);
+}
+
+.agent-badge svg {
+  width: 44px;
+  height: 44px;
+  fill: #fff;
+}
+
+.agent-label {
+  position: absolute;
+  left: 66px;
+  bottom: 50px;
+  z-index: 2;
+  color: rgba(244, 248, 255, 0.88);
+  font-size: 20px;
+  transform: rotate(-3deg);
+}
+
+.map {
+  position: absolute;
+  inset: 43px 49px 30px 154px;
+  z-index: 2;
+}
+
+.map svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.map text {
+  fill: rgba(247, 250, 255, 0.86);
+  font-size: 17px;
+  font-weight: 500;
+}
+
+.dash {
+  fill: none;
+  stroke: rgba(128, 160, 226, 0.74);
+  stroke-width: 2;
+  stroke-dasharray: 3 5;
+}
+
+.hot-line {
+  fill: none;
+  stroke: url(#agentLine);
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-dasharray: 58 8;
+}
+
+.node {
+  position: absolute;
+  z-index: 3;
+  width: 54px;
+  height: 54px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  background: rgba(39, 48, 82, 0.94);
+  border: 1px solid rgba(188, 207, 255, 0.22);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16), 0 12px 22px rgba(0, 0, 0, 0.3);
+}
+
+.node svg {
+  width: 26px;
+  height: 26px;
+  fill: rgba(229, 237, 255, 0.82);
+}
+
+.node .check {
+  position: absolute;
+  right: -8px;
+  top: -12px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: #071423;
+  background: var(--green);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.node-model { right: 116px; top: 42px; background: linear-gradient(145deg, #4d58ff, #7d71ff); transform: rotate(-8deg); }
+.node-memory { right: 95px; top: 114px; }
+.node-clock { right: 74px; top: 191px; transform: rotate(-8deg); }
+.node-tools { right: 55px; bottom: 7px; transform: rotate(-8deg); }
+
+.formula {
+  position: absolute;
+  left: 82px;
+  top: 45px;
+  width: 360px;
+  color: rgba(255, 255, 255, 0.2);
+  text-align: left;
+  transform: scale(0.72);
+  transform-origin: top left;
+}
+
+.formula p {
+  margin: 0 0 10px;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.formula .pill {
+  display: inline-block;
+  padding: 7px 16px;
+  margin: 4px 0 12px;
+  border-radius: 7px;
+  color: rgba(255, 213, 249, 0.78);
+  background: linear-gradient(90deg, rgba(207, 51, 194, 0.5), rgba(120, 66, 255, 0.3));
+  font-weight: 700;
+}
+
+.formula code {
+  display: block;
+  color: rgba(164, 231, 170, 0.34);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+.mini-table {
+  position: absolute;
+  left: 118px;
+  top: 91px;
+  width: 340px;
+  text-align: left;
+  transform: scale(0.72);
+  transform-origin: top left;
+}
+
+.mini-toolbar {
+  display: flex;
+  gap: 18px;
+  padding: 10px 12px;
+  color: rgba(255, 255, 255, 0.16);
+  font-size: 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.mini-table table {
+  width: 100%;
+  border-collapse: collapse;
+  color: rgba(255, 255, 255, 0.23);
+  font-size: 13px;
+}
+
+.mini-table th,
+.mini-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.tag {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgba(56, 110, 255, 0.25);
+  color: rgba(168, 196, 255, 0.4);
+}
+
+.tag.bad {
+  background: rgba(255, 149, 38, 0.2);
+  color: rgba(255, 176, 79, 0.38);
+}
+
+.float-node {
+  position: absolute;
+  z-index: 2;
+  width: 45px;
+  height: 45px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  box-shadow: 0 14px 26px rgba(0, 0, 0, 0.38);
+}
+
+.float-node svg {
+  width: 24px;
+  height: 24px;
+  fill: #dfeaff;
+}
+
+.float-blue { right: 116px; top: 56px; background: linear-gradient(145deg, #1d68ff, #74a2ff); }
+.float-orange { right: 51px; top: 40px; background: linear-gradient(145deg, #b96a04, #e29a2b); }
+.float-purple { right: 2px; top: 13px; width: 34px; height: 34px; background: rgba(100, 74, 190, 0.42); }
+
+.ground-shadow {
+  position: absolute;
+  z-index: 1;
+  left: 50%;
+  bottom: -32px;
+  width: min(760px, 76vw);
+  height: 150px;
+  transform: translateX(-50%);
+  background: radial-gradient(ellipse, rgba(32, 70, 165, 0.22), transparent 68%);
+  filter: blur(18px);
+}
+
+@media (max-width: 1100px) {
+  .nav {
+    padding-inline: 22px;
+  }
+
+  .nav-links {
+    gap: 18px;
+    margin-left: 26px;
+  }
+
+  .nav-links a {
+    font-size: 15px;
+  }
+
+  .profile {
+    display: none;
+  }
+
+  .cards {
+    width: min(760px, 92vw);
+  }
+
+  .card-left,
+  .card-right {
+    opacity: 0.28;
+  }
+}
+
+@media (max-width: 760px) {
+  .nav {
+    height: 64px;
+  }
+
+  .brand {
+    min-width: auto;
+  }
+
+  .brand strong {
+    font-size: 20px;
+  }
+
+  .nav-links {
+    display: none;
+  }
+
+  .nav-right {
+    margin-left: 0;
+    gap: 12px;
+  }
+
+  .nav-cta {
+    height: 38px;
+    min-width: auto;
+    padding-inline: 18px;
+    font-size: 14px;
+  }
+
+  .hero {
+    min-height: calc(100vh - 64px);
+    padding: 58px 18px 28px;
+  }
+
+  h1 {
+    font-size: clamp(44px, 13vw, 72px);
+    line-height: 1.08;
+  }
+
+  .subtitle {
+    margin-top: 18px;
+    font-size: 16px;
+  }
+
+  .hero-action {
+    margin-top: 36px;
+    width: 164px;
+    height: 58px;
+    font-size: 21px;
+  }
+
+  .cards {
+    width: 100%;
+    height: 308px;
+    margin-top: 46px;
+  }
+
+  .card-center {
+    width: min(424px, 92vw);
+    height: 286px;
+  }
+
+  .card-left,
+  .card-right {
+    display: none;
+  }
+
+  .agent-badge {
+    left: 38px;
+    bottom: 74px;
+    width: 70px;
+    height: 70px;
+  }
+
+  .agent-label {
+    left: 42px;
+    bottom: 48px;
+    font-size: 17px;
+  }
+
+  .map {
+    inset: 42px 32px 28px 121px;
+  }
+
+  .node {
+    width: 48px;
+    height: 48px;
+  }
+
+  .node-model { right: 82px; top: 45px; }
+  .node-memory { right: 61px; top: 112px; }
+  .node-clock { right: 44px; top: 181px; }
+  .node-tools { right: 28px; bottom: 11px; }
+}
+</style>
+</head>
+<body>
+<main class="page">
+  <nav class="nav" aria-label="主导航">
+    <div class="brand" aria-label="Lark Base">
+      <div class="mark" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+      <strong>Lark Base</strong>
+    </div>
+    <div class="nav-links">
+      <a href="#">多维表格 AI</a>
+      <a href="#">应用市场<span class="caret" aria-hidden="true"></span></a>
+      <a href="#">解决方案<span class="caret" aria-hidden="true"></span></a>
+      <a href="#">资源<span class="caret" aria-hidden="true"></span></a>
+      <a href="#">价格</a>
+      <a href="#">社区</a>
+    </div>
+    <div class="nav-right">
+      <div class="profile">
+        <span class="avatar" aria-hidden="true"></span>
+        <span>李天天</span>
+        <span class="caret" aria-hidden="true"></span>
+      </div>
+      <button class="nav-cta">免费使用</button>
+    </div>
+  </nav>
+
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="hero-copy">
+      <h1 id="hero-title">
+        <span class="line">用 AI Agent</span>
+        <span class="line accent">搭建专业系统</span>
+      </h1>
+      <p class="subtitle">全新工作方式，开启智能未来</p>
+      <button class="hero-action">免费使用</button>
+    </div>
+
+    <div class="cards" aria-label="AI Agent 系统搭建示意图">
+      <div class="ground-shadow" aria-hidden="true"></div>
+
+      <article class="agent-card card-left" aria-hidden="true">
+        <div class="formula">
+          <p>Filter the employee IDs of Managers in Employee Info Table B, and count the total number of records.</p>
+          <span class="pill">Generate</span>
+          <code>Generate Formula<br>DATEDIF (DATE(MID(<br>AI ID Card Number</code>
+        </div>
+      </article>
+
+      <article class="agent-card card-center">
+        <span class="center-glow" aria-hidden="true"></span>
+        <div class="agent-badge" aria-hidden="true">
+          <svg viewBox="0 0 48 48" role="img">
+            <path d="M25.6 7.2c1.8 7.1 5.1 10.7 11.2 12.2 1.1.3 1.1 1.9 0 2.2-6.1 1.5-9.4 5.1-11.2 12.2-.3 1.2-2 1.2-2.3 0-1.8-7.1-5.1-10.7-11.2-12.2-1.1-.3-1.1-1.9 0-2.2 6.1-1.5 9.4-5.1 11.2-12.2.3-1.2 2-1.2 2.3 0Z"/>
+            <path d="M35 28.8c.8 3.2 2.3 4.8 5 5.5.8.2.8 1.3 0 1.5-2.7.7-4.2 2.3-5 5.5-.2.8-1.3.8-1.5 0-.8-3.2-2.3-4.8-5-5.5-.8-.2-.8-1.3 0-1.5 2.7-.7 4.2-2.3 5-5.5.2-.8 1.3-.8 1.5 0Z"/>
+          </svg>
+        </div>
+        <div class="agent-label">Sales agent</div>
+
+        <div class="map" aria-hidden="true">
+          <svg viewBox="0 0 260 225">
+            <defs>
+              <linearGradient id="agentLine" x1="0" x2="1" y1="0" y2="1">
+                <stop offset="0" stop-color="#3eb5ff"/>
+                <stop offset="1" stop-color="#3976ff"/>
+              </linearGradient>
+            </defs>
+            <path class="dash" d="M7 33 C74 23 121 22 184 18"/>
+            <path class="dash" d="M22 102 C86 96 119 92 176 89"/>
+            <path class="dash" d="M67 117 C73 145 77 170 96 190 C129 195 162 197 208 195"/>
+            <path class="dash" d="M188 134 C151 138 147 138 146 166 C146 185 153 192 205 191"/>
+            <path class="hot-line" d="M9 74 C20 116 19 142 69 140"/>
+            <path class="hot-line" d="M69 140 C80 160 82 179 96 190"/>
+            <text x="48" y="36">Model</text>
+            <text x="60" y="111">Memory</text>
+            <text x="111" y="207">Tools</text>
+          </svg>
+        </div>
+
+        <div class="node node-model" aria-hidden="true">
+          <span class="check">✓</span>
+          <svg viewBox="0 0 32 32"><path d="M8 4h11.2L26 10.8V28H8V4Zm10 2.5V12h5.5L18 6.5ZM11 15h12v2.4H11V15Zm0 5h12v2.4H11V20Z"/></svg>
+        </div>
+        <div class="node node-memory" aria-hidden="true">
+          <span class="check">✓</span>
+          <svg viewBox="0 0 32 32"><path d="M16 4c6.1 0 11 1.8 11 4s-4.9 4-11 4S5 10.2 5 8s4.9-4 11-4Zm-11 7c2.2 1.8 6.4 2.8 11 2.8s8.8-1 11-2.8v4c0 2.2-4.9 4-11 4S5 17.2 5 15v-4Zm0 7c2.2 1.8 6.4 2.8 11 2.8s8.8-1 11-2.8v4c0 2.2-4.9 4-11 4S5 24.2 5 22v-4Z"/></svg>
+        </div>
+        <div class="node node-clock" aria-hidden="true">
+          <span class="check">✓</span>
+          <svg viewBox="0 0 32 32"><path d="M16 4a12 12 0 1 1 0 24 12 12 0 0 1 0-24Zm1.2 6h-2.4v7.2l6 3.5 1.2-2-4.8-2.8V10Z"/></svg>
+        </div>
+        <div class="node node-tools" aria-hidden="true">
+          <svg viewBox="0 0 32 32"><path d="M9 6h2v3h10V6h2v3h3v17H6V9h3V6Zm15 8H8v10h16V14Zm-13 2.5h3v3h-3v-3Zm5.5 0h3v3h-3v-3Z"/></svg>
+        </div>
+      </article>
+
+      <article class="agent-card card-right" aria-hidden="true">
+        <div class="float-node float-blue">
+          <svg viewBox="0 0 32 32"><path d="M7 6h18v13H14l-5 5v-5H7V6Zm5 6h8v2.2h-8V12Zm0 4h6v2.2h-6V16Z"/></svg>
+        </div>
+        <div class="float-node float-orange">
+          <svg viewBox="0 0 32 32"><path d="M9 8h5v5H9V8Zm9 0h5v5h-5V8ZM9 18h5v5H9v-5Zm9 0h5v5h-5v-5Z"/></svg>
+        </div>
+        <div class="float-node float-purple">
+          <svg viewBox="0 0 32 32"><path d="M17 5c1.1 4.4 3.2 6.6 7 7.5.7.2.7 1.2 0 1.4-3.8.9-5.9 3.1-7 7.5-.2.8-1.2.8-1.4 0-1.1-4.4-3.2-6.6-7-7.5-.7-.2-.7-1.2 0-1.4 3.8-.9 5.9-3.1 7-7.5.2-.8 1.2-.8 1.4 0Z"/></svg>
+        </div>
+        <div class="mini-table">
+          <div class="mini-toolbar"><span>AI reviews</span><span>AI Summarize</span><span>Tone</span></div>
+          <table>
+            <tr><th>Review</th><th>Summary</th><th>Tone</th></tr>
+            <tr><td>Don't go to this r...</td><td>Don't go to this r...</td><td><span class="tag bad">Negative</span></td></tr>
+            <tr><td>Don't go to this r...</td><td>Don't go to this r...</td><td><span class="tag">Positive</span></td></tr>
+            <tr><td>The hygiene is v...</td><td>The hygiene is v...</td><td>Great</td></tr>
+          </table>
+        </div>
+      </article>
+    </div>
+  </section>
+</main>
+</body>
+</html>
