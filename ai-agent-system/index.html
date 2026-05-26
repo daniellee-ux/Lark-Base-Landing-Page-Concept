@@ -224,10 +224,42 @@ h1 .line {
 }
 
 h1 .accent {
+  position: relative;
+  display: inline-flex;
+  justify-content: center;
+  min-width: 6.2em;
   color: transparent;
   background: linear-gradient(100deg, #f6fbff 0%, #9ec9ff 38%, #4590ff 80%);
   -webkit-background-clip: text;
   background-clip: text;
+}
+
+h1 .accent::after {
+  content: "";
+  width: 0.08em;
+  height: 0.82em;
+  margin-left: 0.08em;
+  align-self: center;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #f5fbff, #4e94ff);
+  box-shadow: 0 0 20px rgba(77, 145, 255, 0.72);
+  animation: caretBlink 780ms steps(1) infinite;
+}
+
+h1 .typewriter-text {
+  display: inline-block;
+  min-width: 5.4em;
+  text-align: left;
+}
+
+h1 .accent.is-paused::after {
+  animation: none;
+  opacity: 0.55;
+}
+
+@keyframes caretBlink {
+  0%, 48% { opacity: 1; }
+  49%, 100% { opacity: 0; }
 }
 
 .subtitle {
@@ -681,6 +713,13 @@ h1 .accent {
   .node-clock { right: 44px; top: 181px; }
   .node-tools { right: 28px; bottom: 11px; }
 }
+
+@media (prefers-reduced-motion: reduce) {
+  h1 .accent::after {
+    animation: none;
+    opacity: 0;
+  }
+}
 </style>
 </head>
 <body>
@@ -712,7 +751,9 @@ h1 .accent {
     <div class="hero-copy">
       <h1 id="hero-title">
         <span class="line">用 AI Agent</span>
-        <span class="line accent">搭建专业系统</span>
+        <span class="line accent" aria-live="polite">
+          <span class="typewriter-text" data-typewriter>搭建专业系统</span>
+        </span>
       </h1>
       <p class="subtitle">全新工作方式，开启智能未来</p>
       <button class="hero-action">免费使用</button>
@@ -799,5 +840,56 @@ h1 .accent {
     </div>
   </section>
 </main>
+<script>
+const typewriter = document.querySelector("[data-typewriter]");
+
+if (typewriter) {
+  const phrases = [
+    "搭建专业系统",
+    "生成业务流程",
+    "连接团队数据",
+    "自动完成任务"
+  ];
+
+  const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const accentLine = typewriter.closest(".accent");
+  let phraseIndex = 0;
+  let characterIndex = phrases[0].length;
+  let isDeleting = false;
+
+  const delay = (ms) => new Promise((resolve) => window.setTimeout(resolve, ms));
+
+  async function tick() {
+    if (prefersReducedMotion) {
+      typewriter.textContent = phrases[0];
+      accentLine?.classList.add("is-paused");
+      return;
+    }
+
+    const phrase = phrases[phraseIndex];
+    typewriter.textContent = phrase.slice(0, characterIndex);
+
+    if (!isDeleting && characterIndex === phrase.length) {
+      accentLine?.classList.add("is-paused");
+      await delay(1450);
+      accentLine?.classList.remove("is-paused");
+      isDeleting = true;
+    } else if (isDeleting && characterIndex === 0) {
+      isDeleting = false;
+      phraseIndex = (phraseIndex + 1) % phrases.length;
+      await delay(260);
+    }
+
+    characterIndex += isDeleting ? -1 : 1;
+    const nextDelay = isDeleting ? 42 : 86 + Math.random() * 38;
+    await delay(nextDelay);
+    tick();
+  }
+
+  window.addEventListener("load", () => {
+    window.setTimeout(tick, 520);
+  });
+}
+</script>
 </body>
 </html>
