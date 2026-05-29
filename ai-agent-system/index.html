@@ -282,6 +282,43 @@
       100% { opacity: 0; background-position: -150% 0; }
     }
 
+    /* Trail star — one bead of the spiral comet. Transform + opacity only (no filters
+       on moving nodes), so the trail stays on the compositor and doesn't jank. */
+    .sparkle {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 16px;
+      height: 16px;
+      margin: -8px 0 0 -8px;        /* center on its (x, y) */
+      opacity: 0;
+      pointer-events: none;
+      will-change: transform, opacity;
+      /* soft halo baked into the element (not an animated filter) */
+      background: radial-gradient(circle, rgba(160, 200, 255, 0.5) 0%, rgba(160, 200, 255, 0) 66%);
+    }
+
+    .sparkle::before {
+      content: "";
+      position: absolute;
+      inset: 3px;                   /* 4-point star core */
+      background: linear-gradient(180deg, #ffffff 0%, #cfe5ff 55%, #6aa8ff 100%);
+      clip-path: polygon(50% 0%, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0% 50%, 39% 39%);
+    }
+
+    /* Spiral star trail — an INVISIBLE sine path is the trajectory; a comet of stars
+       rides it, switching between these two layers (back behind text, front in front)
+       so the trail appears to wrap around the characters. */
+    .trail-layer {
+      position: absolute;
+      inset: 0;
+      overflow: visible;
+      pointer-events: none;
+    }
+
+    .trail-back { z-index: -1; }     /* trail stars currently behind the characters */
+    .trail-front { z-index: 1; }     /* trail stars currently in front */
+
     /* GSAP-driven caret: absolutely positioned, advanced via translateX per step */
     .gsap-caret {
       position: absolute;
@@ -730,6 +767,78 @@
     shimmer.className = "shimmer";
     shimmer.setAttribute("aria-hidden", "true");
 
+    // spiral star trail: two layers — back (behind the chars) and front (in front) —
+    // hold the trail stars; the sine path itself is invisible, just the trajectory.
+    const trailBack = document.createElement("div");
+    trailBack.className = "trail-layer trail-back";
+    trailBack.setAttribute("aria-hidden", "true");
+    const trailFront = document.createElement("div");
+    trailFront.className = "trail-layer trail-front";
+    trailFront.setAttribute("aria-hidden", "true");
+
+    // sample the invisible sine coil across the current phrase (type-text coords);
+    // `front` = which half of each loop the point is on (depth = cos(phase) >= 0).
+    function computeSpiral(chars) {
+      if (!chars.length) return [];
+      const ttRect = typeText.getBoundingClientRect();
+      const H = ttRect.height;
+      const x0 = chars[0].getBoundingClientRect().left - ttRect.left;
+      const x1 = chars[chars.length - 1].getBoundingClientRect().right - ttRect.left;
+      const span = Math.max(1, x1 - x0);
+      const midY = H / 2;
+      const amp = Math.min(34, H * 0.42);
+      const loops = Math.max(3, Math.round(span / 95));
+      const steps = loops * 40;
+      const pts = [];
+      for (let i = 0; i <= steps; i++) {
+        const t = i / steps;
+        const phase = t * loops * Math.PI * 2;
+        pts.push({ x: x0 + t * span, y: midY + amp * Math.sin(phase), front: Math.cos(phase) >= 0 });
+      }
+      return pts;
+    }
+
+    function spiralAt(pts, u) {
+      const f = Math.max(0, Math.min(1, u)) * (pts.length - 1);
+      const i = Math.floor(f), j = Math.min(pts.length - 1, i + 1), r = f - i;
+      const a = pts[i], b = pts[j];
+      return { x: a.x + (b.x - a.x) * r, y: a.y + (b.y - a.y) * r, front: r < 0.5 ? a.front : b.front };
+    }
+
+    // The emit point sweeps the spiral (synced to `dur`), dropping stars as it goes.
+    // Each dropped star stays where it landed and fades out on ITS OWN over `fadeDur`,
+    // so the trail dissolves star-by-star — the per-star fade is the slow disappearance.
+    function runSpiralTrail(chars, dur) {
+      trailBack.replaceChildren();
+      trailFront.replaceChildren();
+      if (reduceMotion) return;
+      const pts = computeSpiral(chars);
+      if (!pts.length) return;
+      const emitStep = 0.035;  // drop a star every 3.5% of the path
+      const fadeDur = 0.5;     // how long EACH star takes to fade out (bigger = slower)
+      const proxy = { p: 0 };
+      let nextEmit = 0;
+      gsap.to(proxy, {
+        p: 1,
+        duration: dur,
+        ease: "none",
+        onUpdate() {
+          while (nextEmit <= proxy.p) {
+            const pt = spiralAt(pts, nextEmit);
+            nextEmit += emitStep;
+            const el = document.createElement("span");
+            el.className = "sparkle";
+            (pt.front ? trailFront : trailBack).appendChild(el);   // weave in front / behind text
+            const sc = gsap.utils.random(0.55, 1.1);
+            gsap.set(el, { x: pt.x, y: pt.y, scale: sc, rotation: gsap.utils.random(-40, 40), opacity: 0 });
+            gsap.timeline({ onComplete: () => el.remove() })
+              .to(el, { opacity: 1, duration: 0.12, ease: "power1.out" }, 0)
+              .to(el, { opacity: 0, scale: sc * 0.55, y: pt.y - gsap.utils.random(2, 9), duration: fadeDur, ease: "power1.in" }, 0.1);
+          }
+        },
+      });
+    }
+
     let currentSplit = null;
     let caretBlink = null;
 
@@ -778,8 +887,10 @@
       currentSplit = new SplitText(typeText, { type: "chars", charsClass: "char" });
       layoutGradient();
       shimmer.textContent = text;             // overlay copy of the phrase (hidden until swept)
+      typeText.appendChild(trailBack);        // trail stars behind the characters (z-index: -1)
       typeText.appendChild(shimmer);
       typeText.appendChild(caret);            // caret rides along after the chars
+      typeText.appendChild(trailFront);       // trail stars in front of the characters (z-index: 1)
       return currentSplit.chars;
     }
 
@@ -813,6 +924,13 @@
         const left = c.getBoundingClientRect().left - typeText.getBoundingClientRect().left;
         tl.set(caret, { x: left + c.offsetWidth }, i * typeStep);
       });
+
+      // comet sweeps at the typewriter's pace: its span = the char-to-char time, so the
+      // head keeps up with the newest character (matching typeStep) instead of lagging
+      const drawDur = Math.max((chars.length - 1) * typeStep, 0.2);
+      gsap.set([trailBack, trailFront], { opacity: 1 });
+      tl.call(() => runSpiralTrail(chars, drawDur), null, 0);
+
       tl.add(startCaretBlink);              // begin blinking once typed
       tl.to({}, { duration: settleDelay });  // settle
       tl.add(runShimmer);                    // sweep (plays into the hold)
