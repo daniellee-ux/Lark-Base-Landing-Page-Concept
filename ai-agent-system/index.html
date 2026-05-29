@@ -272,7 +272,7 @@
     }
 
     .type-text.is-shimmer .shimmer {
-      animation: title-sheen 700ms ease-out;
+      animation: title-sheen var(--shimmer-dur, 700ms) ease-out;
     }
 
     @keyframes title-sheen {
@@ -613,6 +613,12 @@
         display: none;
       }
     }
+
+    /* live config panel (Tweakpane) — keep it above the page, just below the 60px nav */
+    .tp-dfwv {
+      z-index: 9999 !important;
+      top: 68px !important;
+    }
   </style>
 </head>
 <body>
@@ -671,6 +677,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/SplitText.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tweakpane@3.1.10/dist/tweakpane.min.js"></script>
   <script>
     const slides = [
       { title: "跑业务流程", image: "assets/card-left.png", alt: "Business workflow preview" },
@@ -681,11 +688,21 @@
     const typeText = document.querySelector(".type-text");
     const panels = Array.from(document.querySelectorAll(".panel[data-panel]"));
     const slotClasses = ["is-side", "is-left", "is-center", "is-right", "is-incoming", "is-exit-left"];
-    const holdTime = 1980;
     const slideTime = 760;
-    const typeStep = 0.092;   // seconds between characters (stagger)
-    const charDur = 0.34;     // per-character blur-in duration (shorter → less overlap)
-    const settleDelay = 0.15; // pause after typing before the shimmer (CSS-driven, 700ms)
+    // ---- title animation config — toggle/tune each effect here ----------
+    const CONFIG = {
+      typewriter: { enabled: true, speed: 0.092, charDuration: 0.34 },            // char-by-char reveal
+      blur:       { enabled: true, amount: 4, rise: 14 },                         // per-char blur-in (+ slight rise)
+      caret:      { enabled: true, blink: 0.5 },                                  // blinking type cursor
+      shimmer:    { enabled: true, duration: 0.7 },                               // highlight sweep on settle (seconds)
+      trail:      { enabled: true, density: 0.035, fadeOut: 0.5, amplitude: 34 }, // spiral star trail
+      loop:       { hold: 1.98 },                                                 // seconds each phrase holds before switching
+    };
+
+    // snapshot of the defaults so the panel's Reset button can restore them
+    const DEFAULTS = JSON.parse(JSON.stringify(CONFIG));
+
+    const settleDelay = 0.15; // pause after typing before the shimmer
     let activeIndex = 1;
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -786,7 +803,7 @@
       const x1 = chars[chars.length - 1].getBoundingClientRect().right - ttRect.left;
       const span = Math.max(1, x1 - x0);
       const midY = H / 2;
-      const amp = Math.min(34, H * 0.42);
+      const amp = Math.min(CONFIG.trail.amplitude, H * 0.42);
       const loops = Math.max(3, Math.round(span / 95));
       const steps = loops * 40;
       const pts = [];
@@ -814,8 +831,8 @@
       if (reduceMotion) return;
       const pts = computeSpiral(chars);
       if (!pts.length) return;
-      const emitStep = 0.035;  // drop a star every 3.5% of the path
-      const fadeDur = 0.5;     // how long EACH star takes to fade out (bigger = slower)
+      const emitStep = CONFIG.trail.density;  // drop a star every N of the path (smaller = denser)
+      const fadeDur = CONFIG.trail.fadeOut;   // how long EACH star takes to fade out (bigger = slower)
       const proxy = { p: 0 };
       let nextEmit = 0;
       gsap.to(proxy, {
@@ -866,7 +883,7 @@
       stopCaretBlink();
       caretBlink = gsap.to(caret, {
         opacity: 0,
-        duration: 0.5,
+        duration: CONFIG.caret.blink,
         repeat: -1,
         yoyo: true,
         ease: "power1.inOut",
@@ -877,6 +894,7 @@
     // One-shot highlight: a single overlay layer swept by CSS (off the per-frame path).
     function runShimmer() {
       if (reduceMotion) return;
+      shimmer.style.setProperty("--shimmer-dur", CONFIG.shimmer.duration + "s"); // read live
       typeText.classList.remove("is-shimmer");
       void typeText.offsetWidth;            // restart the CSS animation
       typeText.classList.add("is-shimmer");
@@ -887,59 +905,55 @@
       currentSplit = new SplitText(typeText, { type: "chars", charsClass: "char" });
       layoutGradient();
       shimmer.textContent = text;             // overlay copy of the phrase (hidden until swept)
-      typeText.appendChild(trailBack);        // trail stars behind the characters (z-index: -1)
+      if (CONFIG.trail.enabled) typeText.appendChild(trailBack);   // trail stars behind the chars
       typeText.appendChild(shimmer);
-      typeText.appendChild(caret);            // caret rides along after the chars
-      typeText.appendChild(trailFront);       // trail stars in front of the characters (z-index: 1)
+      if (CONFIG.caret.enabled) typeText.appendChild(caret);       // caret rides along after the chars
+      if (CONFIG.trail.enabled) typeText.appendChild(trailFront);  // trail stars in front of the chars
       return currentSplit.chars;
     }
 
     function typePhrase(text) {
+      // read live so the config panel takes effect on the next phrase
+      const typeStep = CONFIG.typewriter.enabled ? CONFIG.typewriter.speed : 0; // 0 → all chars at once
+      const charDur = CONFIG.typewriter.charDuration;
       typeText.classList.remove("is-shimmer");
       gsap.set(typeText, { opacity: 1, filter: "blur(0px)" });
       const chars = splitPhrase(text);
-      stopCaretBlink();
-      gsap.set(caret, { opacity: 1, x: 0 });
+      if (CONFIG.caret.enabled) { stopCaretBlink(); gsap.set(caret, { opacity: 1, x: 0 }); }
 
       const tl = gsap.timeline();
-      // typewriter + per-character blur-in as one staggered cascade.
-      // Fade + blur use a gentle ease; the rise uses a FAST ease (expo.out) so the
-      // travel finishes while the char is still faint — mirroring the hand-rolled,
-      // where transform settles well ahead of opacity, so the lift reads as tiny.
-      tl.from(chars, {
-        opacity: 0,
-        filter: "blur(4px)",
-        duration: charDur,
-        ease: "power2.out",
-        stagger: typeStep,
-      }, 0);
-      tl.from(chars, {
-        yPercent: 14,            // ≈ 0.18em; fast ease below makes the visible rise ~1.5px
-        duration: charDur,
-        ease: "expo.out",
-        stagger: typeStep,
-      }, 0);
+      // opacity fade-in is the reveal; blur + rise are the optional per-char "materialize".
+      const reveal = { opacity: 0, duration: charDur, ease: "power2.out", stagger: typeStep };
+      if (CONFIG.blur.enabled) reveal.filter = `blur(${CONFIG.blur.amount}px)`;
+      tl.from(chars, reveal, 0);
+      if (CONFIG.blur.enabled) {
+        // fast ease so the rise settles while the char is still faint → the lift reads as tiny
+        tl.from(chars, { yPercent: CONFIG.blur.rise, duration: charDur, ease: "expo.out", stagger: typeStep }, 0);
+      }
+
       // caret hops to each character's trailing edge as it lands
-      chars.forEach((c, i) => {
-        const left = c.getBoundingClientRect().left - typeText.getBoundingClientRect().left;
-        tl.set(caret, { x: left + c.offsetWidth }, i * typeStep);
-      });
+      if (CONFIG.caret.enabled) {
+        chars.forEach((c, i) => {
+          const left = c.getBoundingClientRect().left - typeText.getBoundingClientRect().left;
+          tl.set(caret, { x: left + c.offsetWidth }, i * typeStep);
+        });
+      }
 
-      // comet sweeps at the typewriter's pace: its span = the char-to-char time, so the
-      // head keeps up with the newest character (matching typeStep) instead of lagging
-      const drawDur = Math.max((chars.length - 1) * typeStep, 0.2);
-      gsap.set([trailBack, trailFront], { opacity: 1 });
-      tl.call(() => runSpiralTrail(chars, drawDur), null, 0);
+      // comet sweeps at the typewriter's pace (span = char-to-char time) so it keeps up
+      if (CONFIG.trail.enabled) {
+        const drawDur = Math.max((chars.length - 1) * typeStep, 0.2);
+        gsap.set([trailBack, trailFront], { opacity: 1 });
+        tl.call(() => runSpiralTrail(chars, drawDur), null, 0);
+      }
 
-      tl.add(startCaretBlink);              // begin blinking once typed
-      tl.to({}, { duration: settleDelay });  // settle
-      tl.add(runShimmer);                    // sweep (plays into the hold)
+      if (CONFIG.caret.enabled) tl.add(startCaretBlink);   // begin blinking once typed
+      tl.to({}, { duration: settleDelay });                // settle
+      if (CONFIG.shimmer.enabled) tl.add(runShimmer);      // sweep (plays into the hold)
       return tl.then();
     }
 
     function fadePhrase() {
-      stopCaretBlink();
-      gsap.to(caret, { opacity: 0, duration: 0.2 });
+      if (CONFIG.caret.enabled) { stopCaretBlink(); gsap.to(caret, { opacity: 0, duration: 0.2 }); }
       return gsap
         .to(typeText, { opacity: 0, filter: "blur(7px)", duration: 0.3, ease: "power2.in" })
         .then();
@@ -948,7 +962,7 @@
     async function runHeroLoop() {
       renderPanels(activeIndex);
       await typePhrase(slides[activeIndex].title);
-      await wait(holdTime);
+      await wait(CONFIG.loop.hold * 1000);
 
       while (true) {
         await fadePhrase();
@@ -961,7 +975,7 @@
             await wait(slideTime);
           })(),
         ]);
-        await wait(holdTime);
+        await wait(CONFIG.loop.hold * 1000);
       }
     }
 
@@ -973,6 +987,44 @@
       caret.remove();
     } else {
       runHeroLoop();
+    }
+
+    // ---- live config panel (Tweakpane) — add ?config (or #config) to the URL to show it ----
+    // Loads from CDN; if it's unavailable the page just runs without the panel.
+    if (window.Tweakpane && (location.search + location.hash).includes("config")) {
+      const pane = new Tweakpane.Pane({ title: "Title FX" });
+
+      const ft = pane.addFolder({ title: "打字机 Typewriter" });
+      ft.addInput(CONFIG.typewriter, "enabled", { label: "enabled" });
+      ft.addInput(CONFIG.typewriter, "speed", { min: 0.02, max: 0.25, step: 0.005, label: "speed (s/char)" });
+      ft.addInput(CONFIG.typewriter, "charDuration", { min: 0.1, max: 2, step: 0.02, label: "char reveal (s)" });
+
+      const fb = pane.addFolder({ title: "逐字模糊 Blur-in" });
+      fb.addInput(CONFIG.blur, "enabled", { label: "enabled" });
+      fb.addInput(CONFIG.blur, "amount", { min: 0, max: 12, step: 0.5, label: "blur (px)" });
+      fb.addInput(CONFIG.blur, "rise", { min: 0, max: 40, step: 1, label: "rise (%)" });
+
+      const fc = pane.addFolder({ title: "光标 Caret" });
+      fc.addInput(CONFIG.caret, "enabled", { label: "enabled" });
+      fc.addInput(CONFIG.caret, "blink", { min: 0.2, max: 1.2, step: 0.05, label: "blink (s)" });
+
+      const fs = pane.addFolder({ title: "扫光 Shimmer" });
+      fs.addInput(CONFIG.shimmer, "enabled", { label: "enabled" });
+      fs.addInput(CONFIG.shimmer, "duration", { min: 0.3, max: 1.5, step: 0.05, label: "sweep (s)" });
+
+      const fr = pane.addFolder({ title: "螺旋星轨 Spiral trail" });
+      fr.addInput(CONFIG.trail, "enabled", { label: "enabled" });
+      fr.addInput(CONFIG.trail, "density", { min: 0.02, max: 0.12, step: 0.005, label: "spacing (↓ denser)" });
+      fr.addInput(CONFIG.trail, "fadeOut", { min: 0.2, max: 1.5, step: 0.05, label: "star fade (s)" });
+      fr.addInput(CONFIG.trail, "amplitude", { min: 10, max: 60, step: 2, label: "loop height (px)" });
+
+      const fl = pane.addFolder({ title: "切换 Switching" });
+      fl.addInput(CONFIG.loop, "hold", { min: 0.5, max: 5, step: 0.1, label: "hold per phrase (s)" });
+
+      pane.addButton({ title: "恢复默认 Reset" }).on("click", () => {
+        for (const group in DEFAULTS) Object.assign(CONFIG[group], DEFAULTS[group]);
+        pane.refresh();   // push restored values back into the sliders/toggles
+      });
     }
   </script>
 </body>
