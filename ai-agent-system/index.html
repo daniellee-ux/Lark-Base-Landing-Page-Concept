@@ -213,7 +213,7 @@
       display: block;
       min-height: 84px;
       color: transparent;
-      background: linear-gradient(90deg, #edf6ff 0%, #cfe5ff 28%, #94c3ff 54%, #65a8ff 74%, #3d86ff 100%);
+      background: var(--title-grad, linear-gradient(90deg, #ffffff 0%, #f1e8ff 45%, #b88fff 76%, #7a45ff 100%));
       -webkit-background-clip: text;
       background-clip: text;
     }
@@ -223,7 +223,7 @@
       display: inline-block;
       min-width: 5em;
       color: transparent;
-      background: inherit;
+      background: var(--title-grad, linear-gradient(90deg, #ffffff 0%, #f1e8ff 45%, #b88fff 76%, #7a45ff 100%));
       -webkit-background-clip: text;
       background-clip: text;
       text-align: center;
@@ -576,12 +576,13 @@
   </main>
   <script>
     const slides = [
-      { title: "跑业务流程", image: "assets/card-left.png", alt: "Business workflow preview" },
-      { title: "搭专业系统", image: "assets/card-center.png", alt: "Professional system builder preview" },
-      { title: "生成公式", image: "assets/card-right.png", alt: "Formula generation preview" },
+      { title: "跑业务流程", image: "assets/card-left.png", alt: "Business workflow preview", gradient: "linear-gradient(90deg, #ffffff 0%, #e8fff4 45%, #5fe0a3 76%, #15c774 100%)" },
+      { title: "搭专业系统", image: "assets/card-center.png", alt: "Professional system builder preview", gradient: "linear-gradient(90deg, #ffffff 0%, #f1e8ff 45%, #b88fff 76%, #7a45ff 100%)" },
+      { title: "生成公式", image: "assets/card-right.png", alt: "Formula generation preview", gradient: "linear-gradient(90deg, #ffffff 0%, #fff2e6 45%, #ffab63 76%, #ff7d1f 100%)" },
     ];
 
     const typeText = document.querySelector(".type-text");
+    const secondEl = document.querySelector(".second");
     const panels = Array.from(document.querySelectorAll(".panel[data-panel]"));
     const slotClasses = ["is-side", "is-left", "is-center", "is-right", "is-incoming", "is-exit-left"];
     const typingSpeed = 92;
@@ -660,6 +661,10 @@
       typeText.textContent = text;
     }
 
+    function applyGradient(index) {
+      secondEl.style.setProperty("--title-grad", slides[normalizedIndex(index)].gradient);
+    }
+
     async function typePhrase(text) {
       typeText.classList.remove("is-exiting");
       typeText.textContent = "";
@@ -678,12 +683,14 @@
 
     async function runHeroLoop() {
       renderPanels(activeIndex);
+      applyGradient(activeIndex);
       setPhrase(slides[activeIndex].title);
       await wait(holdTime);
 
       while (true) {
         await fadePhrase();
         activeIndex = (activeIndex + 1) % slides.length;
+        applyGradient(activeIndex);
         await Promise.all([
           typePhrase(slides[activeIndex].title),
           (async () => {
@@ -698,6 +705,7 @@
 
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       renderPanels(activeIndex);
+      applyGradient(activeIndex);
     } else {
       runHeroLoop();
     }
