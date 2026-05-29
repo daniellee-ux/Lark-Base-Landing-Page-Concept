@@ -1,4 +1,13 @@
 <!DOCTYPE html>
+<!--
+  Lark Base AI Agent — single-screen hero.
+  Looping title animation built on GSAP + SplitText (CDN, gsap 3.13.0, no build step):
+    • SplitText splits each phrase into per-character spans
+    • one timeline does the typewriter + per-character blur-in as a staggered cascade
+    • caret, shimmer sweep and exit are GSAP tweens
+  Each character carries its own measured "slice" of one phrase-wide gradient, so the
+  gradient stays continuous across characters while each char blurs/transforms on its own.
+-->
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
@@ -19,6 +28,7 @@
       --muted: rgba(191, 201, 219, 0.58);
       --nav: rgba(8, 12, 24, 0.82);
       --card-ease: cubic-bezier(0.65, 0, 0.35, 1);
+      --title-grad: linear-gradient(90deg, #edf6ff 0%, #cfe5ff 28%, #94c3ff 54%, #65a8ff 74%, #3d86ff 100%);
     }
 
     html,
@@ -212,32 +222,115 @@
       position: relative;
       display: block;
       min-height: 84px;
-      color: transparent;
-      background: var(--title-grad, linear-gradient(90deg, #ffffff 0%, #f1e8ff 45%, #b88fff 76%, #7a45ff 100%));
-      -webkit-background-clip: text;
-      background-clip: text;
     }
 
+    /* Title line — GSAP/SplitText drives the reveal, so .char carries NO initial
+       hidden state or transition here (the timeline supplies the from-values).
+       It keeps only the per-character gradient slice; the shimmer is a single
+       overlay element (.shimmer), not a per-char background sweep. */
     .type-text {
       position: relative;
       display: inline-block;
       min-width: 5em;
-      color: transparent;
-      background: var(--title-grad, linear-gradient(90deg, #ffffff 0%, #f1e8ff 45%, #b88fff 76%, #7a45ff 100%));
-      -webkit-background-clip: text;
-      background-clip: text;
       text-align: center;
       white-space: nowrap;
+      color: #cfe5ff;            /* pre-JS fallback colour only */
       transform: translateZ(0);
-      will-change: opacity, filter, transform;
-      transition:
-        opacity 220ms ease,
-        filter 260ms ease,
-        transform 320ms cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    .type-text.is-exiting {
+    .char {
+      display: inline-block;
+      color: transparent;
+      -webkit-text-fill-color: transparent;
+      background-image: var(--title-grad);
+      background-repeat: no-repeat;
+      background-size: var(--grad-w, 100%) 100%;
+      background-position: calc(-1 * var(--x, 0px)) 0;
+      -webkit-background-clip: text;
+      background-clip: text;
+      will-change: opacity, filter, transform;
+    }
+
+    /* Shimmer: one overlay copy of the phrase, swept once by a single CSS layer. */
+    .shimmer {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+      text-align: center;
+      white-space: nowrap;
+      pointer-events: none;
+      color: transparent;
+      -webkit-text-fill-color: transparent;
+      background-image: linear-gradient(100deg, transparent 42%, rgba(255, 255, 255, 0.92) 50%, transparent 58%);
+      background-repeat: no-repeat;
+      background-size: 280% 100%;
+      background-position: 150% 0;
+      -webkit-background-clip: text;
+      background-clip: text;
       opacity: 0;
+    }
+
+    .type-text.is-shimmer .shimmer {
+      animation: title-sheen var(--shimmer-dur, 700ms) ease-out;
+    }
+
+    @keyframes title-sheen {
+      0% { opacity: 0; background-position: 150% 0; }
+      14% { opacity: 1; }
+      86% { opacity: 1; }
+      100% { opacity: 0; background-position: -150% 0; }
+    }
+
+    /* Trail star — one bead of the spiral comet. Transform + opacity only (no filters
+       on moving nodes), so the trail stays on the compositor and doesn't jank. */
+    .sparkle {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 16px;
+      height: 16px;
+      margin: -8px 0 0 -8px;        /* center on its (x, y) */
+      opacity: 0;
+      pointer-events: none;
+      will-change: transform, opacity;
+      /* soft halo baked into the element (not an animated filter) */
+      background: radial-gradient(circle, var(--accent, #a0c8ff) 0%, transparent 62%);
+    }
+
+    .sparkle::before {
+      content: "";
+      position: absolute;
+      inset: 3px;                   /* 4-point star core */
+      background: linear-gradient(180deg, #ffffff 0%, var(--accent, #6aa8ff) 100%);
+      clip-path: polygon(50% 0%, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0% 50%, 39% 39%);
+    }
+
+    /* Spiral star trail — an INVISIBLE sine path is the trajectory; a comet of stars
+       rides it, switching between these two layers (back behind text, front in front)
+       so the trail appears to wrap around the characters. */
+    .trail-layer {
+      position: absolute;
+      inset: 0;
+      overflow: visible;
+      pointer-events: none;
+    }
+
+    .trail-back { z-index: -1; }     /* trail stars currently behind the characters */
+    .trail-front { z-index: 1; }     /* trail stars currently in front */
+
+    /* GSAP-driven caret: absolutely positioned, advanced via translateX per step */
+    .gsap-caret {
+      position: absolute;
+      left: 0;
+      top: 50%;
+      width: 3px;
+      height: 0.92em;
+      margin-top: -0.5em;
+      border-radius: 2px;
+      background: linear-gradient(180deg, #cfe5ff 0%, #4f95ff 100%);
+      box-shadow: 0 0 12px rgba(99, 168, 255, 0.85);
+      pointer-events: none;
     }
 
     .subtitle {
@@ -512,12 +605,19 @@
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .panel,
-      .type-text {
+      .panel {
         transition: none;
-        animation: none;
       }
 
+      .gsap-caret {
+        display: none;
+      }
+    }
+
+    /* live config panel (Tweakpane) — keep it above the page, just below the 60px nav */
+    .tp-dfwv {
+      z-index: 9999 !important;
+      top: 68px !important;
     }
   </style>
 </head>
@@ -574,6 +674,10 @@
       <div class="fade right"></div>
     </section>
   </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/SplitText.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tweakpane@3.1.10/dist/tweakpane.min.js"></script>
   <script>
     const slides = [
       { title: "跑业务流程", image: "assets/card-left.png", alt: "Business workflow preview", gradient: "linear-gradient(90deg, #ffffff 0%, #e8fff4 45%, #5fe0a3 76%, #15c774 100%)" },
@@ -582,14 +686,27 @@
     ];
 
     const typeText = document.querySelector(".type-text");
-    const secondEl = document.querySelector(".second");
     const panels = Array.from(document.querySelectorAll(".panel[data-panel]"));
     const slotClasses = ["is-side", "is-left", "is-center", "is-right", "is-incoming", "is-exit-left"];
-    const typingSpeed = 92;
-    const maskExitTime = 260;
-    const holdTime = 1980;
     const slideTime = 760;
+    // ---- title animation config — toggle/tune each effect here ----------
+    const CONFIG = {
+      typewriter: { enabled: true, speed: 0.092, charDuration: 0.34 },            // char-by-char reveal
+      blur:       { enabled: true, amount: 4, rise: 14 },                         // per-char blur-in (+ slight rise)
+      caret:      { enabled: true, blink: 0.5 },                                  // blinking type cursor
+      shimmer:    { enabled: true, duration: 0.7 },                               // highlight sweep on settle (seconds)
+      trail:      { enabled: true, density: 0.035, fadeOut: 0.5, amplitude: 34 }, // spiral star trail
+      loop:       { hold: 1.98 },                                                 // seconds each phrase holds before switching
+    };
+
+    // snapshot of the defaults so the panel's Reset button can restore them
+    const DEFAULTS = JSON.parse(JSON.stringify(CONFIG));
+
+    const settleDelay = 0.15; // pause after typing before the shimmer
     let activeIndex = 1;
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    gsap.registerPlugin(SplitText);
 
     slides.forEach((slide) => {
       const img = new Image();
@@ -657,35 +774,206 @@
       return new Promise((resolve) => window.requestAnimationFrame(resolve));
     }
 
-    function setPhrase(text) {
-      typeText.textContent = text;
-    }
+    // ---- title (GSAP + SplitText) -----------------------------------------
 
-    function applyGradient(index) {
-      secondEl.style.setProperty("--title-grad", slides[normalizedIndex(index)].gradient);
-    }
+    const caret = document.createElement("span");
+    caret.className = "gsap-caret";
+    caret.setAttribute("aria-hidden", "true");
 
-    async function typePhrase(text) {
-      typeText.classList.remove("is-exiting");
-      typeText.textContent = "";
+    const shimmer = document.createElement("span");
+    shimmer.className = "shimmer";
+    shimmer.setAttribute("aria-hidden", "true");
 
-      for (let i = 1; i <= text.length; i += 1) {
-        typeText.textContent = text.slice(0, i);
-        await wait(typingSpeed);
+    // spiral star trail: two layers — back (behind the chars) and front (in front) —
+    // hold the trail stars; the sine path itself is invisible, just the trajectory.
+    const trailBack = document.createElement("div");
+    trailBack.className = "trail-layer trail-back";
+    trailBack.setAttribute("aria-hidden", "true");
+    const trailFront = document.createElement("div");
+    trailFront.className = "trail-layer trail-front";
+    trailFront.setAttribute("aria-hidden", "true");
+
+    // sample the invisible sine coil across the current phrase (type-text coords);
+    // `front` = which half of each loop the point is on (depth = cos(phase) >= 0).
+    function computeSpiral(chars) {
+      if (!chars.length) return [];
+      const ttRect = typeText.getBoundingClientRect();
+      const H = ttRect.height;
+      const x0 = chars[0].getBoundingClientRect().left - ttRect.left;
+      const x1 = chars[chars.length - 1].getBoundingClientRect().right - ttRect.left;
+      const span = Math.max(1, x1 - x0);
+      const midY = H / 2;
+      const amp = Math.min(CONFIG.trail.amplitude, H * 0.42);
+      const loops = Math.max(3, Math.round(span / 95));
+      const steps = loops * 40;
+      const pts = [];
+      for (let i = 0; i <= steps; i++) {
+        const t = i / steps;
+        const phase = t * loops * Math.PI * 2;
+        pts.push({ x: x0 + t * span, y: midY + amp * Math.sin(phase), front: Math.cos(phase) >= 0 });
       }
+      return pts;
     }
 
-    async function fadePhrase() {
-      typeText.classList.add("is-exiting");
-      await wait(maskExitTime);
-      typeText.classList.remove("is-exiting");
+    function spiralAt(pts, u) {
+      const f = Math.max(0, Math.min(1, u)) * (pts.length - 1);
+      const i = Math.floor(f), j = Math.min(pts.length - 1, i + 1), r = f - i;
+      const a = pts[i], b = pts[j];
+      return { x: a.x + (b.x - a.x) * r, y: a.y + (b.y - a.y) * r, front: r < 0.5 ? a.front : b.front };
+    }
+
+    // The emit point sweeps the spiral (synced to `dur`), dropping stars as it goes.
+    // Each dropped star stays where it landed and fades out on ITS OWN over `fadeDur`,
+    // so the trail dissolves star-by-star — the per-star fade is the slow disappearance.
+    function runSpiralTrail(chars, dur) {
+      trailBack.replaceChildren();
+      trailFront.replaceChildren();
+      if (reduceMotion) return;
+      const pts = computeSpiral(chars);
+      if (!pts.length) return;
+      const emitStep = CONFIG.trail.density;  // drop a star every N of the path (smaller = denser)
+      const fadeDur = CONFIG.trail.fadeOut;   // how long EACH star takes to fade out (bigger = slower)
+      const proxy = { p: 0 };
+      let nextEmit = 0;
+      gsap.to(proxy, {
+        p: 1,
+        duration: dur,
+        ease: "none",
+        onUpdate() {
+          while (nextEmit <= proxy.p) {
+            const pt = spiralAt(pts, nextEmit);
+            nextEmit += emitStep;
+            const el = document.createElement("span");
+            el.className = "sparkle";
+            (pt.front ? trailFront : trailBack).appendChild(el);   // weave in front / behind text
+            const sc = gsap.utils.random(0.55, 1.1);
+            gsap.set(el, { x: pt.x, y: pt.y, scale: sc, rotation: gsap.utils.random(-40, 40), opacity: 0 });
+            gsap.timeline({ onComplete: () => el.remove() })
+              .to(el, { opacity: 1, duration: 0.12, ease: "power1.out" }, 0)
+              .to(el, { opacity: 0, scale: sc * 0.55, y: pt.y - gsap.utils.random(2, 9), duration: fadeDur, ease: "power1.in" }, 0.1);
+          }
+        },
+      });
+    }
+
+    let currentSplit = null;
+    let caretBlink = null;
+
+    // Map one phrase-wide gradient onto the split chars (the slice technique).
+    // rect-based offsets stay correct regardless of how SplitText nests elements.
+    function layoutGradient() {
+      if (!currentSplit || !currentSplit.chars.length) return;
+      const ttRect = typeText.getBoundingClientRect();
+      typeText.style.setProperty("--grad-w", ttRect.width + "px");
+      currentSplit.chars.forEach((c) => {
+        const r = c.getBoundingClientRect();
+        c.style.setProperty("--x", (r.left - ttRect.left) + "px");
+      });
+    }
+
+    function stopCaretBlink() {
+      if (caretBlink) {
+        caretBlink.kill();
+        caretBlink = null;
+      }
+      gsap.set(caret, { opacity: 1 });
+    }
+
+    function startCaretBlink() {
+      stopCaretBlink();
+      caretBlink = gsap.to(caret, {
+        opacity: 0,
+        duration: CONFIG.caret.blink,
+        repeat: -1,
+        yoyo: true,
+        ease: "power1.inOut",
+        delay: 0.25,
+      });
+    }
+
+    // One-shot highlight: a single overlay layer swept by CSS (off the per-frame path).
+    function runShimmer() {
+      if (reduceMotion) return;
+      shimmer.style.setProperty("--shimmer-dur", CONFIG.shimmer.duration + "s"); // read live
+      typeText.classList.remove("is-shimmer");
+      void typeText.offsetWidth;            // restart the CSS animation
+      typeText.classList.add("is-shimmer");
+    }
+
+    function splitPhrase(text) {
+      typeText.textContent = text;            // wipe old chars (and detached caret/shimmer)
+      currentSplit = new SplitText(typeText, { type: "chars", charsClass: "char" });
+      layoutGradient();
+      shimmer.textContent = text;             // overlay copy of the phrase (hidden until swept)
+      if (CONFIG.trail.enabled) typeText.appendChild(trailBack);   // trail stars behind the chars
+      typeText.appendChild(shimmer);
+      if (CONFIG.caret.enabled) typeText.appendChild(caret);       // caret rides along after the chars
+      if (CONFIG.trail.enabled) typeText.appendChild(trailFront);  // trail stars in front of the chars
+      return currentSplit.chars;
+    }
+
+    function typePhrase(text) {
+      // read live so the config panel takes effect on the next phrase
+      const typeStep = CONFIG.typewriter.enabled ? CONFIG.typewriter.speed : 0; // 0 → all chars at once
+      const charDur = CONFIG.typewriter.charDuration;
+      typeText.classList.remove("is-shimmer");
+      gsap.set(typeText, { opacity: 1, filter: "blur(0px)" });
+      const chars = splitPhrase(text);
+      if (CONFIG.caret.enabled) { stopCaretBlink(); gsap.set(caret, { opacity: 1, x: 0 }); }
+
+      const tl = gsap.timeline();
+      // opacity fade-in is the reveal; blur + rise are the optional per-char "materialize".
+      const reveal = { opacity: 0, duration: charDur, ease: "power2.out", stagger: typeStep };
+      if (CONFIG.blur.enabled) reveal.filter = `blur(${CONFIG.blur.amount}px)`;
+      tl.from(chars, reveal, 0);
+      if (CONFIG.blur.enabled) {
+        // fast ease so the rise settles while the char is still faint → the lift reads as tiny
+        tl.from(chars, { yPercent: CONFIG.blur.rise, duration: charDur, ease: "expo.out", stagger: typeStep }, 0);
+      }
+
+      // caret hops to each character's trailing edge as it lands
+      if (CONFIG.caret.enabled) {
+        chars.forEach((c, i) => {
+          const left = c.getBoundingClientRect().left - typeText.getBoundingClientRect().left;
+          tl.set(caret, { x: left + c.offsetWidth }, i * typeStep);
+        });
+      }
+
+      // comet sweeps at the typewriter's pace (span = char-to-char time) so it keeps up
+      if (CONFIG.trail.enabled) {
+        const drawDur = Math.max((chars.length - 1) * typeStep, 0.2);
+        gsap.set([trailBack, trailFront], { opacity: 1 });
+        tl.call(() => runSpiralTrail(chars, drawDur), null, 0);
+      }
+
+      if (CONFIG.caret.enabled) tl.add(startCaretBlink);   // begin blinking once typed
+      tl.to({}, { duration: settleDelay });                // settle
+      if (CONFIG.shimmer.enabled) tl.add(runShimmer);      // sweep (plays into the hold)
+      return tl.then();
+    }
+
+    function fadePhrase() {
+      if (CONFIG.caret.enabled) { stopCaretBlink(); gsap.to(caret, { opacity: 0, duration: 0.2 }); }
+      return gsap
+        .to(typeText, { opacity: 0, filter: "blur(7px)", duration: 0.3, ease: "power2.in" })
+        .then();
+    }
+
+    // recolor the title to match the centered card (per-card gradient via --title-grad,
+    // which every .char already reads — merged from master's carousel-synced coloring)
+    function applyGradient(index) {
+      const grad = slides[normalizedIndex(index)].gradient;
+      typeText.style.setProperty("--title-grad", grad);
+      // the gradient's last colour is the card accent — match the trail stars to it
+      const accent = (grad.match(/#[0-9a-fA-F]{6}(?=[^#]*$)/) || ["#6aa8ff"])[0];
+      typeText.style.setProperty("--accent", accent);
     }
 
     async function runHeroLoop() {
       renderPanels(activeIndex);
       applyGradient(activeIndex);
-      setPhrase(slides[activeIndex].title);
-      await wait(holdTime);
+      await typePhrase(slides[activeIndex].title);
+      await wait(CONFIG.loop.hold * 1000);
 
       while (true) {
         await fadePhrase();
@@ -699,15 +987,57 @@
             await wait(slideTime);
           })(),
         ]);
-        await wait(holdTime);
+        await wait(CONFIG.loop.hold * 1000);
       }
     }
 
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    window.addEventListener("resize", layoutGradient);
+
+    if (reduceMotion) {
       renderPanels(activeIndex);
       applyGradient(activeIndex);
+      splitPhrase(slides[activeIndex].title);
+      caret.remove();
     } else {
       runHeroLoop();
+    }
+
+    // ---- live config panel (Tweakpane) — add ?config (or #config) to the URL to show it ----
+    // Loads from CDN; if it's unavailable the page just runs without the panel.
+    if (window.Tweakpane && (location.search + location.hash).includes("config")) {
+      const pane = new Tweakpane.Pane({ title: "Title FX" });
+
+      const ft = pane.addFolder({ title: "打字机 Typewriter" });
+      ft.addInput(CONFIG.typewriter, "enabled", { label: "enabled" });
+      ft.addInput(CONFIG.typewriter, "speed", { min: 0.02, max: 0.25, step: 0.005, label: "speed (s/char)" });
+      ft.addInput(CONFIG.typewriter, "charDuration", { min: 0.1, max: 2, step: 0.02, label: "char reveal (s)" });
+
+      const fb = pane.addFolder({ title: "逐字模糊 Blur-in" });
+      fb.addInput(CONFIG.blur, "enabled", { label: "enabled" });
+      fb.addInput(CONFIG.blur, "amount", { min: 0, max: 12, step: 0.5, label: "blur (px)" });
+      fb.addInput(CONFIG.blur, "rise", { min: 0, max: 40, step: 1, label: "rise (%)" });
+
+      const fc = pane.addFolder({ title: "光标 Caret" });
+      fc.addInput(CONFIG.caret, "enabled", { label: "enabled" });
+      fc.addInput(CONFIG.caret, "blink", { min: 0.2, max: 1.2, step: 0.05, label: "blink (s)" });
+
+      const fs = pane.addFolder({ title: "扫光 Shimmer" });
+      fs.addInput(CONFIG.shimmer, "enabled", { label: "enabled" });
+      fs.addInput(CONFIG.shimmer, "duration", { min: 0.3, max: 1.5, step: 0.05, label: "sweep (s)" });
+
+      const fr = pane.addFolder({ title: "螺旋星轨 Spiral trail" });
+      fr.addInput(CONFIG.trail, "enabled", { label: "enabled" });
+      fr.addInput(CONFIG.trail, "density", { min: 0.02, max: 0.12, step: 0.005, label: "spacing (↓ denser)" });
+      fr.addInput(CONFIG.trail, "fadeOut", { min: 0.2, max: 1.5, step: 0.05, label: "star fade (s)" });
+      fr.addInput(CONFIG.trail, "amplitude", { min: 10, max: 60, step: 2, label: "loop height (px)" });
+
+      const fl = pane.addFolder({ title: "切换 Switching" });
+      fl.addInput(CONFIG.loop, "hold", { min: 0.5, max: 5, step: 0.1, label: "hold per phrase (s)" });
+
+      pane.addButton({ title: "恢复默认 Reset" }).on("click", () => {
+        for (const group in DEFAULTS) Object.assign(CONFIG[group], DEFAULTS[group]);
+        pane.refresh();   // push restored values back into the sliders/toggles
+      });
     }
   </script>
 </body>
