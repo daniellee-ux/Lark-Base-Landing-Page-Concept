@@ -295,14 +295,14 @@
       pointer-events: none;
       will-change: transform, opacity;
       /* soft halo baked into the element (not an animated filter) */
-      background: radial-gradient(circle, rgba(160, 200, 255, 0.5) 0%, rgba(160, 200, 255, 0) 66%);
+      background: radial-gradient(circle, var(--accent, #a0c8ff) 0%, transparent 62%);
     }
 
     .sparkle::before {
       content: "";
       position: absolute;
       inset: 3px;                   /* 4-point star core */
-      background: linear-gradient(180deg, #ffffff 0%, #cfe5ff 55%, #6aa8ff 100%);
+      background: linear-gradient(180deg, #ffffff 0%, var(--accent, #6aa8ff) 100%);
       clip-path: polygon(50% 0%, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0% 50%, 39% 39%);
     }
 
@@ -680,9 +680,9 @@
   <script src="https://cdn.jsdelivr.net/npm/tweakpane@3.1.10/dist/tweakpane.min.js"></script>
   <script>
     const slides = [
-      { title: "跑业务流程", image: "assets/card-left.png", alt: "Business workflow preview" },
-      { title: "搭专业系统", image: "assets/card-center.png", alt: "Professional system builder preview" },
-      { title: "生成公式", image: "assets/card-right.png", alt: "Formula generation preview" },
+      { title: "跑业务流程", image: "assets/card-left.png", alt: "Business workflow preview", gradient: "linear-gradient(90deg, #ffffff 0%, #e8fff4 45%, #5fe0a3 76%, #15c774 100%)" },
+      { title: "搭专业系统", image: "assets/card-center.png", alt: "Professional system builder preview", gradient: "linear-gradient(90deg, #ffffff 0%, #f1e8ff 45%, #b88fff 76%, #7a45ff 100%)" },
+      { title: "生成公式", image: "assets/card-right.png", alt: "Formula generation preview", gradient: "linear-gradient(90deg, #ffffff 0%, #fff2e6 45%, #ffab63 76%, #ff7d1f 100%)" },
     ];
 
     const typeText = document.querySelector(".type-text");
@@ -959,14 +959,26 @@
         .then();
     }
 
+    // recolor the title to match the centered card (per-card gradient via --title-grad,
+    // which every .char already reads — merged from master's carousel-synced coloring)
+    function applyGradient(index) {
+      const grad = slides[normalizedIndex(index)].gradient;
+      typeText.style.setProperty("--title-grad", grad);
+      // the gradient's last colour is the card accent — match the trail stars to it
+      const accent = (grad.match(/#[0-9a-fA-F]{6}(?=[^#]*$)/) || ["#6aa8ff"])[0];
+      typeText.style.setProperty("--accent", accent);
+    }
+
     async function runHeroLoop() {
       renderPanels(activeIndex);
+      applyGradient(activeIndex);
       await typePhrase(slides[activeIndex].title);
       await wait(CONFIG.loop.hold * 1000);
 
       while (true) {
         await fadePhrase();
         activeIndex = (activeIndex + 1) % slides.length;
+        applyGradient(activeIndex);
         await Promise.all([
           typePhrase(slides[activeIndex].title),
           (async () => {
@@ -983,6 +995,7 @@
 
     if (reduceMotion) {
       renderPanels(activeIndex);
+      applyGradient(activeIndex);
       splitPhrase(slides[activeIndex].title);
       caret.remove();
     } else {
