@@ -27,6 +27,7 @@
       --text: #f4f8ff;
       --muted: rgba(191, 201, 219, 0.58);
       --nav: rgba(8, 12, 24, 0.82);
+      --nav-h: 60px;
       --card-ease: cubic-bezier(0.65, 0, 0.35, 1);
       --title-grad: linear-gradient(90deg, #edf6ff 0%, #cfe5ff 28%, #94c3ff 54%, #65a8ff 74%, #3d86ff 100%);
     }
@@ -43,8 +44,6 @@
     }
 
     body {
-      display: flex;
-      justify-content: center;
       overflow-x: hidden;
     }
 
@@ -53,6 +52,7 @@
       width: 100%;
       min-height: 805px;
       overflow: hidden;
+      padding-top: var(--nav-h);
       background:
         radial-gradient(ellipse 660px 150px at 50% -4%, rgba(45, 103, 255, 0.38), transparent 72%),
         radial-gradient(ellipse 940px 250px at 50% 5%, rgba(30, 83, 211, 0.28), transparent 72%),
@@ -87,16 +87,21 @@
     }
 
     .nav {
-      position: relative;
-      z-index: 4;
-      height: 60px;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 40;
+      height: var(--nav-h);
       border-bottom: 1px solid rgba(255, 255, 255, 0.05);
       background: linear-gradient(90deg, rgba(0, 0, 0, 0.9), var(--nav) 50%, rgba(0, 0, 0, 0.9));
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
     }
 
     .nav-inner {
       width: min(1376px, calc(100% - 80px));
-      height: 60px;
+      height: var(--nav-h);
       margin: 0 auto;
       display: flex;
       align-items: center;
@@ -523,6 +528,436 @@
       z-index: 8;
     }
 
+    .logo-wall {
+      position: relative;
+      height: 151px;
+      overflow: hidden;
+      background: #000;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .logo-wall-title {
+      position: absolute;
+      left: 50%;
+      top: 38px;
+      transform: translateX(-50%);
+      color: rgba(143, 149, 158, 0.42);
+      font-family: "Noto Sans SC", "PingFang SC", sans-serif;
+      font-size: 12px;
+      font-weight: 400;
+      letter-spacing: 2.16px;
+      line-height: 14px;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .logo-strip {
+      position: absolute;
+      left: 50%;
+      top: 66px;
+      width: 1572px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transform: translateX(-50%);
+    }
+
+    .logo-item {
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px 32px;
+      opacity: 0.47;
+      filter: grayscale(1);
+    }
+
+    .logo-item img {
+      display: block;
+      max-height: 32px;
+      max-width: 154px;
+      object-fit: contain;
+    }
+
+    .logo-text {
+      color: rgba(255, 255, 255, 0.68);
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
+
+    .logo-fade {
+      position: absolute;
+      top: 75px;
+      width: 853px;
+      height: 51px;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .logo-fade.left {
+      left: -53px;
+      background: linear-gradient(90deg, #000 0%, rgba(8, 8, 8, 0) 100%);
+    }
+
+    .logo-fade.right {
+      right: -46px;
+      background: linear-gradient(270deg, #000 0%, rgba(8, 8, 8, 0) 100%);
+    }
+
+    .ai-tabs {
+      height: 281px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #000;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .compact-tabs {
+      position: fixed;
+      top: var(--nav-h);
+      left: 0;
+      right: 0;
+      z-index: 30;
+      height: 118px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(0, 0, 0, 0.86);
+      opacity: 0;
+      pointer-events: none;
+      visibility: hidden;
+      transform: translate3d(0, -22px, 0);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      transition:
+        opacity 240ms ease,
+        transform 360ms cubic-bezier(0.16, 1, 0.3, 1),
+        visibility 0s linear 260ms;
+      will-change: opacity, transform;
+    }
+
+    .compact-tabs::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 760px 82px at 50% -28px, rgba(70, 126, 255, 0.14), transparent 72%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.045), transparent 64%);
+      pointer-events: none;
+    }
+
+    .compact-tabs.is-visible {
+      opacity: 1;
+      pointer-events: auto;
+      visibility: visible;
+      transform: translate3d(0, 0, 0);
+      transition:
+        opacity 220ms ease,
+        transform 360ms cubic-bezier(0.16, 1, 0.3, 1),
+        visibility 0s;
+    }
+
+    .compact-tabs-inner {
+      position: relative;
+      width: min(1378px, calc(100% - 72px));
+      height: 74px;
+      display: grid;
+      grid-template-columns: repeat(5, 254px);
+      gap: 27px;
+      justify-content: center;
+    }
+
+    .compact-tab {
+      position: relative;
+      min-width: 0;
+      height: 74px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      overflow: hidden;
+      border: 0;
+      border-radius: 14px;
+      padding: 0;
+      background: transparent;
+      color: rgba(235, 235, 235, 0.68);
+      font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+      font-size: 15px;
+      font-weight: 500;
+      line-height: 22px;
+      text-decoration: none;
+      cursor: pointer;
+      transition:
+        transform 180ms ease;
+    }
+
+    .compact-tab::before {
+      display: none;
+    }
+
+    .compact-tab:active {
+      transform: translate3d(0, 1px, 0);
+    }
+
+    .tab-grid {
+      width: min(1378px, calc(100% - 72px));
+      display: grid;
+      grid-template-columns: repeat(5, 254px);
+      gap: 27px;
+      justify-content: center;
+    }
+
+    .ai-tab-card {
+      position: relative;
+      height: 142px;
+      overflow: hidden;
+      border: 0;
+      border-radius: 16px;
+      padding: 0;
+      background: transparent;
+      cursor: pointer;
+    }
+
+    .tab-card-image,
+    .compact-tab-image {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: fill;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+
+    .tab-card-image {
+      border-radius: 16px;
+    }
+
+    .compact-tab-image {
+      border-radius: 14px;
+    }
+
+    .ai-tab-card:focus-visible,
+    .compact-tab:focus-visible {
+      outline: 2px solid rgba(80, 131, 251, 0.72);
+      outline-offset: 4px;
+    }
+
+    .build-system {
+      position: relative;
+      min-height: 1226px;
+      overflow: hidden;
+      background: #000;
+      padding: 60px 48px 111px;
+      scroll-margin-top: 180px;
+    }
+
+    .build-inner {
+      width: min(1472px, 100%);
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 80px;
+    }
+
+    .section-head {
+      width: min(680px, 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+
+    .eyebrow {
+      height: 32px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 5px 9px;
+      border-radius: 32px;
+      border: 1px solid #2d2247;
+      background: #1c162d;
+      color: #a28fff;
+      font-family: "Lark Circular", "PingFang SC", sans-serif;
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 1px;
+      line-height: 18px;
+      text-transform: uppercase;
+    }
+
+    .eyebrow img {
+      width: 24px;
+      height: 24px;
+      display: block;
+    }
+
+    .section-head h2 {
+      margin-top: 20px;
+      color: #ebebeb;
+      font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+      font-size: 44px;
+      font-weight: 600;
+      line-height: 1.25;
+    }
+
+    .section-head p {
+      margin-top: 18px;
+      color: #a6a6a6;
+      font-size: 18px;
+      font-weight: 400;
+      line-height: 22px;
+    }
+
+    .section-actions {
+      margin-top: 56px;
+      display: flex;
+      gap: 12px;
+    }
+
+    .section-btn {
+      width: 152px;
+      height: 50px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 100px;
+      font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+      font-size: 20px;
+      font-weight: 500;
+      line-height: 30px;
+    }
+
+    .section-btn.primary {
+      color: #fff;
+      background: linear-gradient(90deg, #4e83fd 0%, #3370ff 100%);
+    }
+
+    .section-btn.secondary {
+      border: 1px solid #5083fb;
+      color: #5083fb;
+      background: linear-gradient(90deg, #5083fb 0%, #336df4 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .system-demo {
+      position: relative;
+      width: min(1040px, 100%);
+      height: 732px;
+      overflow: hidden;
+      border: 1px solid #2e2e2f;
+      border-radius: 24px;
+      background: #050505;
+    }
+
+    .system-preview {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 585px;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    .system-preview img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: cover;
+    }
+
+    .process-bars {
+      position: absolute;
+      left: 50%;
+      top: 589px;
+      width: 1038px;
+      height: 3px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 4px;
+      transform: translateX(-50%);
+      z-index: 2;
+    }
+
+    .process-bars span {
+      height: 3px;
+      background: #373737;
+    }
+
+    .process-active {
+      position: absolute;
+      left: 52px;
+      top: 589px;
+      width: 161px;
+      height: 3px;
+      background: #a28fff;
+      z-index: 3;
+    }
+
+    .process-steps {
+      position: absolute;
+      left: -1px;
+      bottom: 0;
+      width: 1040px;
+      height: 136px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 2px;
+      z-index: 2;
+    }
+
+    .process-step {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 25px 50px;
+      text-align: center;
+      backdrop-filter: blur(8.65px);
+      color: #5f5f5f;
+      box-shadow: -21px 33px 21.85px rgba(0, 0, 0, 0.41);
+    }
+
+    .process-step.active {
+      color: #ebebeb;
+    }
+
+    .process-step.active::before {
+      content: "";
+      position: absolute;
+      left: 47px;
+      top: 0;
+      width: 161px;
+      height: 136px;
+      background: #1c162d;
+      z-index: -1;
+    }
+
+    .process-step h3 {
+      font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+      font-size: 20px;
+      font-weight: 600;
+      line-height: 1.25;
+      white-space: nowrap;
+    }
+
+    .process-step p {
+      width: 180px;
+      margin-top: 10px;
+      font-size: 14px;
+      font-weight: 400;
+      line-height: 22px;
+      color: currentColor;
+    }
+
     @media (max-width: 1180px) {
       .nav-inner {
         width: calc(100% - 48px);
@@ -552,6 +987,21 @@
       .cards {
         transform: translateX(-50%) scale(0.9);
         transform-origin: top center;
+      }
+
+      .tab-grid {
+        grid-template-columns: repeat(5, 254px);
+        overflow: hidden;
+      }
+
+      .compact-tabs-inner {
+        width: min(1378px, calc(100% - 72px));
+        grid-template-columns: repeat(5, 254px);
+        overflow: hidden;
+      }
+
+      .logo-strip {
+        transform: translateX(-50%) scale(0.78);
       }
     }
 
@@ -601,6 +1051,126 @@
 
       .cards {
         transform: translateX(-50%) scale(0.62);
+      }
+
+      .logo-wall {
+        height: 132px;
+      }
+
+      .logo-strip {
+        width: 1180px;
+        transform: translateX(-50%) scale(0.55);
+      }
+
+      .ai-tabs {
+        height: auto;
+        padding: 40px 20px;
+      }
+
+      .compact-tabs {
+        height: 82px;
+      }
+
+      .compact-tabs-inner {
+        width: calc(100% - 24px);
+        height: 60px;
+        display: flex;
+        justify-content: flex-start;
+        overflow-x: auto;
+        gap: 12px;
+        scrollbar-width: none;
+      }
+
+      .compact-tabs-inner::-webkit-scrollbar {
+        display: none;
+      }
+
+      .compact-tab {
+        flex: 0 0 206px;
+        height: 60px;
+        font-size: 13px;
+      }
+
+      .compact-tab-image {
+        width: 100%;
+        height: 100%;
+      }
+
+      .tab-grid {
+        width: 100%;
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+
+      .ai-tab-card {
+        height: 142px;
+      }
+
+      .build-system {
+        min-height: auto;
+        padding: 52px 20px 72px;
+      }
+
+      .build-inner {
+        gap: 48px;
+      }
+
+      .section-head h2 {
+        font-size: 32px;
+      }
+
+      .section-head p {
+        font-size: 15px;
+        line-height: 22px;
+      }
+
+      .section-actions {
+        margin-top: 36px;
+      }
+
+      .section-btn {
+        width: 132px;
+        height: 44px;
+        font-size: 17px;
+      }
+
+      .system-demo {
+        height: 620px;
+      }
+
+      .system-preview {
+        height: 360px;
+      }
+
+      .process-bars,
+      .process-active {
+        display: none;
+      }
+
+      .process-steps {
+        left: 0;
+        width: 100%;
+        height: 260px;
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .process-step {
+        padding: 22px 16px;
+      }
+
+      .process-step.active::before {
+        left: 0;
+        width: 100%;
+      }
+
+      .process-step h3 {
+        font-size: 16px;
+      }
+
+      .process-step p {
+        width: auto;
+        font-size: 12px;
+        line-height: 18px;
       }
     }
 
@@ -675,6 +1245,119 @@
     </section>
   </main>
 
+  <section class="logo-wall" aria-label="Trusted by top teams">
+    <div class="logo-wall-title">Trusted by Top Teams</div>
+    <div class="logo-strip">
+      <div class="logo-item"><span class="logo-text">NIO</span></div>
+      <div class="logo-item"><img src="assets/logo-lotus.svg" alt="Lotus NYO" /></div>
+      <div class="logo-item"><img src="assets/logo-xiaomi.svg" alt="Xiaomi" /></div>
+      <div class="logo-item"><img src="assets/logo-starrocks.svg" alt="StarRocks" /></div>
+      <div class="logo-item"><img src="assets/logo-bluefocus.svg" alt="BlueFocus" /></div>
+      <div class="logo-item"><img src="assets/logo-jt.svg" alt="J&T Express" /></div>
+      <div class="logo-item"><img src="assets/logo-mico.svg" alt="Mico World" /></div>
+      <div class="logo-item"><img src="assets/logo-unity.svg" alt="Unity" /></div>
+      <div class="logo-item"><img src="assets/logo-popmart.svg" alt="Pop Mart" /></div>
+    </div>
+    <div class="logo-fade left"></div>
+    <div class="logo-fade right"></div>
+  </section>
+
+  <nav class="compact-tabs" aria-label="AI capability quick navigation" aria-hidden="true">
+    <div class="compact-tabs-inner">
+      <button class="compact-tab active" type="button" data-tab="system" aria-label="AI 搭建系统" aria-pressed="true">
+        <img class="compact-tab-image tab-state-image" src="assets/tab-sticky-system-active.png" alt="" data-src-default="assets/tab-sticky-system-default.png" data-src-hover="assets/tab-sticky-system-hover.png" data-src-active="assets/tab-sticky-system-active.png" />
+      </button>
+      <button class="compact-tab" type="button" data-tab="table" aria-label="数据表 AI" aria-pressed="false">
+        <img class="compact-tab-image tab-state-image" src="assets/tab-sticky-table-default.png" alt="" data-src-default="assets/tab-sticky-table-default.png" data-src-hover="assets/tab-sticky-table-hover.png" data-src-active="assets/tab-sticky-table-active.png" />
+      </button>
+      <button class="compact-tab" type="button" data-tab="workflow" aria-label="工作流 AI" aria-pressed="false">
+        <img class="compact-tab-image tab-state-image" src="assets/tab-sticky-workflow-default.png" alt="" data-src-default="assets/tab-sticky-workflow-default.png" data-src-hover="assets/tab-sticky-workflow-hover.png" data-src-active="assets/tab-sticky-workflow-active.png" />
+      </button>
+      <button class="compact-tab" type="button" data-tab="dashboard" aria-label="AI 仪表盘" aria-pressed="false">
+        <img class="compact-tab-image tab-state-image" src="assets/tab-sticky-dashboard-default.png" alt="" data-src-default="assets/tab-sticky-dashboard-default.png" data-src-hover="assets/tab-sticky-dashboard-hover.png" data-src-active="assets/tab-sticky-dashboard-active.png" />
+      </button>
+      <button class="compact-tab" type="button" data-tab="qa" aria-label="AI 问数" aria-pressed="false">
+        <img class="compact-tab-image tab-state-image" src="assets/tab-sticky-qa-default.png" alt="" data-src-default="assets/tab-sticky-qa-default.png" data-src-hover="assets/tab-sticky-qa-hover.png" data-src-active="assets/tab-sticky-qa-active.png" />
+      </button>
+    </div>
+  </nav>
+
+  <section class="ai-tabs" aria-label="AI capabilities">
+    <div class="tab-grid">
+      <button class="ai-tab-card active" type="button" data-tab="system" aria-label="AI 搭建系统" aria-pressed="true">
+        <img class="tab-card-image tab-state-image" src="assets/tab-card-system-active.png" alt="" data-src-default="assets/tab-card-system-default.png" data-src-hover="assets/tab-card-system-hover.png" data-src-active="assets/tab-card-system-active.png" />
+      </button>
+      <button class="ai-tab-card" type="button" data-tab="table" aria-label="数据表 AI" aria-pressed="false">
+        <img class="tab-card-image tab-state-image" src="assets/tab-card-table-default.png" alt="" data-src-default="assets/tab-card-table-default.png" data-src-hover="assets/tab-card-table-hover.png" data-src-active="assets/tab-card-table-active.png" />
+      </button>
+      <button class="ai-tab-card" type="button" data-tab="workflow" aria-label="工作流 AI" aria-pressed="false">
+        <img class="tab-card-image tab-state-image" src="assets/tab-card-workflow-default.png" alt="" data-src-default="assets/tab-card-workflow-default.png" data-src-hover="assets/tab-card-workflow-hover.png" data-src-active="assets/tab-card-workflow-active.png" />
+      </button>
+      <button class="ai-tab-card" type="button" data-tab="dashboard" aria-label="AI 仪表盘" aria-pressed="false">
+        <img class="tab-card-image tab-state-image" src="assets/tab-card-dashboard-default.png" alt="" data-src-default="assets/tab-card-dashboard-default.png" data-src-hover="assets/tab-card-dashboard-hover.png" data-src-active="assets/tab-card-dashboard-active.png" />
+      </button>
+      <button class="ai-tab-card" type="button" data-tab="qa" aria-label="AI 问数" aria-pressed="false">
+        <img class="tab-card-image tab-state-image" src="assets/tab-card-qa-default.png" alt="" data-src-default="assets/tab-card-qa-default.png" data-src-hover="assets/tab-card-qa-hover.png" data-src-active="assets/tab-card-qa-active.png" />
+      </button>
+    </div>
+  </section>
+
+  <section class="build-system" id="build-system" aria-label="Build professional systems with AI">
+    <div class="build-inner">
+      <header class="section-head">
+        <div class="eyebrow">
+          <img src="assets/star-blue.svg" alt="" />
+          <span>AI 搭建系统</span>
+        </div>
+        <h2>一句话，AI 帮你搞定专业系统</h2>
+        <p>描述需求即可快速生成专属系统，AI 持续释放业务效率</p>
+        <div class="section-actions">
+          <a class="section-btn primary" href="#">免费试用</a>
+          <a class="section-btn secondary" href="#">联系我们</a>
+        </div>
+      </header>
+
+      <div class="system-demo">
+        <div class="system-preview">
+          <img src="assets/system-preview.png" alt="AI system builder preview" />
+        </div>
+        <div class="process-bars" aria-hidden="true">
+          <span></span>
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+        <div class="process-active" aria-hidden="true"></div>
+        <div class="process-steps">
+          <article class="process-step active">
+            <div>
+              <h3>轻松描述系统需求</h3>
+              <p>用自然语言描述业务场景即可搭建专业系统</p>
+            </div>
+          </article>
+          <article class="process-step">
+            <div>
+              <h3>智能拆解需求方案</h3>
+              <p>AI 将需求转为系统架构，梳理字段、流程与规则</p>
+            </div>
+          </article>
+          <article class="process-step">
+            <div>
+              <h3>AI 组队搭建系统</h3>
+              <p>AI Agent 搭建多维表格和流程并配置权限</p>
+            </div>
+          </article>
+          <article class="process-step">
+            <div>
+              <h3>专业交付开箱即用</h3>
+              <p>立即生成实用系统，拖拽即可灵活迭代</p>
+            </div>
+          </article>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/SplitText.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/tweakpane@3.1.10/dist/tweakpane.min.js"></script>
@@ -687,6 +1370,10 @@
 
     const typeText = document.querySelector(".type-text");
     const panels = Array.from(document.querySelectorAll(".panel[data-panel]"));
+    const compactTabs = document.querySelector(".compact-tabs");
+    const expandedTabs = document.querySelector(".ai-tabs");
+    const tabButtons = Array.from(document.querySelectorAll("[data-tab]"));
+    const tabStateImages = Array.from(document.querySelectorAll(".tab-state-image"));
     const slotClasses = ["is-side", "is-left", "is-center", "is-right", "is-incoming", "is-exit-left"];
     const slideTime = 760;
     // ---- title animation config — toggle/tune each effect here ----------
@@ -708,10 +1395,23 @@
 
     gsap.registerPlugin(SplitText);
 
+    let activeTabId = "system";
+    let compactTabsTicking = false;
+
     slides.forEach((slide) => {
       const img = new Image();
       img.decoding = "async";
       img.src = slide.image;
+    });
+
+    tabStateImages.forEach((stateImage) => {
+      ["default", "hover", "active"].forEach((state) => {
+        const src = stateImage.dataset[`src${state[0].toUpperCase()}${state.slice(1)}`];
+        if (!src) return;
+        const img = new Image();
+        img.decoding = "async";
+        img.src = src;
+      });
     });
 
     function normalizedIndex(index) {
@@ -774,8 +1474,90 @@
       return new Promise((resolve) => window.requestAnimationFrame(resolve));
     }
 
-    // ---- title (GSAP + SplitText) -----------------------------------------
+    function updateCompactTabs() {
+      if (!compactTabs || !expandedTabs) return;
 
+      const triggerY = expandedTabs.offsetTop + 72;
+      const shouldShow = window.scrollY >= triggerY;
+      compactTabs.classList.toggle("is-visible", shouldShow);
+      compactTabs.setAttribute("aria-hidden", shouldShow ? "false" : "true");
+    }
+
+    function requestCompactTabsUpdate() {
+      if (compactTabsTicking) return;
+
+      compactTabsTicking = true;
+      window.requestAnimationFrame(() => {
+        updateCompactTabs();
+        compactTabsTicking = false;
+      });
+    }
+
+    function imageSrcForState(image, state) {
+      return image.dataset[`src${state[0].toUpperCase()}${state.slice(1)}`];
+    }
+
+    function setTabVisual(button, state) {
+      const image = button.querySelector(".tab-state-image");
+      const nextSrc = image && imageSrcForState(image, state);
+      if (nextSrc && image.getAttribute("src") !== nextSrc) {
+        image.setAttribute("src", nextSrc);
+      }
+    }
+
+    function renderTabButtons() {
+      tabButtons.forEach((button) => {
+        const isActive = button.dataset.tab === activeTabId;
+        button.classList.toggle("active", isActive);
+        button.setAttribute("aria-pressed", isActive ? "true" : "false");
+        setTabVisual(button, isActive ? "active" : "default");
+      });
+    }
+
+    function setActiveTab(tabId) {
+      activeTabId = tabId;
+      renderTabButtons();
+    }
+
+    tabButtons.forEach((button) => {
+      button.addEventListener("mouseenter", () => {
+        if (button.dataset.tab !== activeTabId) setTabVisual(button, "hover");
+      });
+
+      button.addEventListener("mouseleave", () => {
+        renderTabButtons();
+      });
+
+      button.addEventListener("focus", () => {
+        if (button.dataset.tab !== activeTabId) setTabVisual(button, "hover");
+      });
+
+      button.addEventListener("blur", () => {
+        renderTabButtons();
+      });
+
+      button.addEventListener("pointerdown", () => {
+        setTabVisual(button, "active");
+      });
+
+      button.addEventListener("pointerup", () => {
+        if (button.dataset.tab !== activeTabId) setTabVisual(button, "hover");
+      });
+
+      button.addEventListener("pointercancel", () => {
+        renderTabButtons();
+      });
+
+      button.addEventListener("click", () => {
+        setActiveTab(button.dataset.tab);
+      });
+    });
+
+    function setPhrase(text) {
+      typeText.textContent = text;
+    }
+
+    // ---- title (GSAP + SplitText) -----------------------------------------
     const caret = document.createElement("span");
     caret.className = "gsap-caret";
     caret.setAttribute("aria-hidden", "true");
@@ -1039,6 +1821,11 @@
         pane.refresh();   // push restored values back into the sliders/toggles
       });
     }
+
+    updateCompactTabs();
+    renderTabButtons();
+    window.addEventListener("scroll", requestCompactTabsUpdate, { passive: true });
+    window.addEventListener("resize", requestCompactTabsUpdate);
   </script>
 </body>
 </html>
