@@ -287,31 +287,25 @@
       100% { opacity: 0; background-position: -150% 0; }
     }
 
-    /* Trail star — one bead of the spiral comet. Transform + opacity only (no filters
-       on moving nodes), so the trail stays on the compositor and doesn't jank. */
+    /* Trail sparkle — one bead of the spiral path. Transform + opacity only, with
+       no glow, shadows, or filters, so the title effect stays crisp. */
     .sparkle {
       position: absolute;
       top: 0;
       left: 0;
-      width: 16px;
-      height: 16px;
-      margin: -8px 0 0 -8px;        /* center on its (x, y) */
+      width: 17px;
+      height: 17px;
+      margin: -8.5px 0 0 -8.5px;    /* center on its (x, y) */
       opacity: 0;
       pointer-events: none;
       will-change: transform, opacity;
-      /* soft halo baked into the element (not an animated filter) */
-      background: radial-gradient(circle, var(--accent, #a0c8ff) 0%, transparent 62%);
+      background: currentColor;
+      color: color-mix(in srgb, #ffffff 78%, var(--accent, #6aa8ff));
+      mask: url("data:image/svg+xml,%3Csvg width='17' height='17' viewBox='0 0 17 17' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M7.22367 0.601472C7.55615 -0.200639 8.69242 -0.200446 9.02462 0.60178L9.67672 2.17648C10.5006 4.16614 12.081 5.74716 14.0703 6.57196L15.6461 7.22531C16.4481 7.55783 16.4479 8.69395 15.6458 9.02619L14.0709 9.67854C12.0795 10.5034 10.4977 12.0859 9.67367 14.0776L9.02414 15.6476C8.69195 16.4506 7.55458 16.4504 7.22267 15.6473L6.57077 14.07C5.7469 12.0767 4.16404 10.4929 2.17119 9.66783L0.601855 9.01811C-0.200471 8.68594 -0.200663 7.54954 0.601547 7.21709L2.17987 6.56301C4.16887 5.73875 5.74924 4.15851 6.57368 2.16957L7.22367 0.601472Z' fill='black'/%3E%3C/svg%3E") center / contain no-repeat;
+      -webkit-mask: url("data:image/svg+xml,%3Csvg width='17' height='17' viewBox='0 0 17 17' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M7.22367 0.601472C7.55615 -0.200639 8.69242 -0.200446 9.02462 0.60178L9.67672 2.17648C10.5006 4.16614 12.081 5.74716 14.0703 6.57196L15.6461 7.22531C16.4481 7.55783 16.4479 8.69395 15.6458 9.02619L14.0709 9.67854C12.0795 10.5034 10.4977 12.0859 9.67367 14.0776L9.02414 15.6476C8.69195 16.4506 7.55458 16.4504 7.22267 15.6473L6.57077 14.07C5.7469 12.0767 4.16404 10.4929 2.17119 9.66783L0.601855 9.01811C-0.200471 8.68594 -0.200663 7.54954 0.601547 7.21709L2.17987 6.56301C4.16887 5.73875 5.74924 4.15851 6.57368 2.16957L7.22367 0.601472Z' fill='black'/%3E%3C/svg%3E") center / contain no-repeat;
     }
 
-    .sparkle::before {
-      content: "";
-      position: absolute;
-      inset: 3px;                   /* 4-point star core */
-      background: linear-gradient(180deg, #ffffff 0%, var(--accent, #6aa8ff) 100%);
-      clip-path: polygon(50% 0%, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0% 50%, 39% 39%);
-    }
-
-    /* Spiral star trail — an INVISIBLE sine path is the trajectory; a comet of stars
+    /* Spiral sparkle trail — an INVISIBLE sine path is the trajectory; a stream of shapes
        rides it, switching between these two layers (back behind text, front in front)
        so the trail appears to wrap around the characters. */
     .trail-layer {
@@ -321,8 +315,8 @@
       pointer-events: none;
     }
 
-    .trail-back { z-index: -1; }     /* trail stars currently behind the characters */
-    .trail-front { z-index: 1; }     /* trail stars currently in front */
+    .trail-back { z-index: -1; }     /* trail shapes currently behind the characters */
+    .trail-front { z-index: 1; }     /* trail shapes currently in front */
 
     /* GSAP-driven caret: absolutely positioned, advanced via translateX per step */
     .gsap-caret {
@@ -665,7 +659,7 @@
     .compact-tabs-inner {
       position: relative;
       width: min(1378px, calc(100% - 72px));
-      height: 74px;
+      height: 60px;
       display: grid;
       grid-template-columns: repeat(5, 254px);
       gap: 27px;
@@ -675,7 +669,7 @@
     .compact-tab {
       position: relative;
       min-width: 0;
-      height: 74px;
+      height: 60px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -867,11 +861,24 @@
       background: #fff;
     }
 
-    .system-preview img {
+    .system-preview img,
+    .system-preview video {
       width: 100%;
       height: 100%;
       display: block;
       object-fit: cover;
+    }
+
+    .system-preview video {
+      display: none;
+    }
+
+    .system-preview.is-video img {
+      display: none;
+    }
+
+    .system-preview.is-video video {
+      display: block;
     }
 
     .process-bars {
@@ -888,18 +895,24 @@
     }
 
     .process-bars span {
+      position: relative;
+      overflow: hidden;
       height: 3px;
       background: #373737;
+      --progress: 0%;
+    }
+
+    .process-bars span::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      width: var(--progress);
+      background: #a28fff;
+      transition: width 120ms linear;
     }
 
     .process-active {
-      position: absolute;
-      left: 52px;
-      top: 589px;
-      width: 161px;
-      height: 3px;
-      background: #a28fff;
-      z-index: 3;
+      display: none;
     }
 
     .process-steps {
@@ -919,11 +932,22 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 25px 50px;
+      min-width: 0;
+      padding: 25px 24px;
+      overflow: hidden;
       text-align: center;
       backdrop-filter: blur(8.65px);
       color: #5f5f5f;
       box-shadow: -21px 33px 21.85px rgba(0, 0, 0, 0.41);
+      cursor: pointer;
+      isolation: isolate;
+      transition: color 220ms ease;
+      --progress: 0%;
+    }
+
+    .process-step > div {
+      width: 100%;
+      min-width: 0;
     }
 
     .process-step.active {
@@ -933,9 +957,9 @@
     .process-step.active::before {
       content: "";
       position: absolute;
-      left: 47px;
+      left: 0;
       top: 0;
-      width: 161px;
+      width: 100%;
       height: 136px;
       background: #1c162d;
       z-index: -1;
@@ -950,7 +974,7 @@
     }
 
     .process-step p {
-      width: 180px;
+      width: min(210px, 100%);
       margin-top: 10px;
       font-size: 14px;
       font-weight: 400;
@@ -1319,7 +1343,8 @@
 
       <div class="system-demo">
         <div class="system-preview">
-          <img src="assets/system-preview.png" alt="AI system builder preview" />
+          <video class="system-video" muted playsinline preload="metadata"></video>
+          <img class="system-preview-image" src="assets/system-preview.png" alt="AI system builder preview" />
         </div>
         <div class="process-bars" aria-hidden="true">
           <span></span>
@@ -1329,25 +1354,25 @@
         </div>
         <div class="process-active" aria-hidden="true"></div>
         <div class="process-steps">
-          <article class="process-step active">
+          <article class="process-step active" data-media="assets/videos/chapter-1-4k.mp4" data-duration="5.06">
             <div>
               <h3>轻松描述系统需求</h3>
               <p>用自然语言描述业务场景即可搭建专业系统</p>
             </div>
           </article>
-          <article class="process-step">
+          <article class="process-step" data-media="assets/videos/chapter-2-4k.mp4" data-duration="5.06">
             <div>
               <h3>智能拆解需求方案</h3>
               <p>AI 将需求转为系统架构，梳理字段、流程与规则</p>
             </div>
           </article>
-          <article class="process-step">
+          <article class="process-step" data-media="assets/videos/chapter-3-4k.mp4" data-duration="5.06">
             <div>
               <h3>AI 组队搭建系统</h3>
               <p>AI Agent 搭建多维表格和流程并配置权限</p>
             </div>
           </article>
-          <article class="process-step">
+          <article class="process-step" data-media="assets/videos/chapter-4-4k.mp4" data-duration="7.06">
             <div>
               <h3>专业交付开箱即用</h3>
               <p>立即生成实用系统，拖拽即可灵活迭代</p>
@@ -1374,16 +1399,21 @@
     const expandedTabs = document.querySelector(".ai-tabs");
     const tabButtons = Array.from(document.querySelectorAll("[data-tab]"));
     const tabStateImages = Array.from(document.querySelectorAll(".tab-state-image"));
+    const systemPreview = document.querySelector(".system-preview");
+    const systemVideo = document.querySelector(".system-video");
+    const systemPreviewImage = document.querySelector(".system-preview-image");
+    const processSteps = Array.from(document.querySelectorAll(".process-step"));
+    const processProgressBars = Array.from(document.querySelectorAll(".process-bars span"));
     const slotClasses = ["is-side", "is-left", "is-center", "is-right", "is-incoming", "is-exit-left"];
     const slideTime = 760;
     // ---- title animation config — toggle/tune each effect here ----------
     const CONFIG = {
       typewriter: { enabled: true, speed: 0.092, charDuration: 0.34 },            // char-by-char reveal
       blur:       { enabled: true, amount: 4, rise: 14 },                         // per-char blur-in (+ slight rise)
-      caret:      { enabled: true, blink: 0.5 },                                  // blinking type cursor
-      shimmer:    { enabled: true, duration: 0.7 },                               // highlight sweep on settle (seconds)
-      trail:      { enabled: true, density: 0.035, fadeOut: 0.5, amplitude: 34 }, // spiral star trail
-      loop:       { hold: 1.98 },                                                 // seconds each phrase holds before switching
+      caret:      { enabled: false, blink: 0.5 },                                 // blinking type cursor
+      shimmer:    { enabled: false, duration: 0.7 },                              // highlight sweep on settle (seconds)
+      trail:      { enabled: true, density: 0.105, fadeOut: 0.5, amplitude: 34, size: 0.5, sizeRandom: 0.42, opacity: 0.6, opacityRandom: 0.75 }, // spiral sparkle trail
+      loop:       { hold: 2 },                                                    // seconds each phrase holds before switching
     };
 
     // snapshot of the defaults so the panel's Reset button can restore them
@@ -1397,6 +1427,11 @@
 
     let activeTabId = "system";
     let compactTabsTicking = false;
+    let processIndex = 0;
+    let processFrame = 0;
+    let processTimer = 0;
+    let processToken = 0;
+    let processVideoCleanup = null;
 
     slides.forEach((slide) => {
       const img = new Image();
@@ -1553,6 +1588,189 @@
       });
     });
 
+    function setProcessProgress(index, progress) {
+      const nextProgress = `${Math.max(0, Math.min(1, progress)) * 100}%`;
+      const bar = processProgressBars[index];
+      const step = processSteps[index];
+      if (bar) bar.style.setProperty("--progress", nextProgress);
+      if (step) step.style.setProperty("--progress", nextProgress);
+    }
+
+    function clearProcessPlayback() {
+      if (processFrame) {
+        cancelAnimationFrame(processFrame);
+        processFrame = 0;
+      }
+
+      if (processTimer) {
+        clearTimeout(processTimer);
+        processTimer = 0;
+      }
+
+      if (processVideoCleanup) {
+        processVideoCleanup();
+        processVideoCleanup = null;
+      }
+
+      if (systemVideo) {
+        systemVideo.pause();
+      }
+    }
+
+    function renderProcessState(activeIndex) {
+      processSteps.forEach((step, index) => {
+        const isActive = index === activeIndex;
+        step.classList.toggle("active", isActive);
+        step.setAttribute("aria-pressed", isActive ? "true" : "false");
+      });
+
+      processProgressBars.forEach((bar, index) => {
+        bar.classList.toggle("is-active", index === activeIndex);
+        bar.style.setProperty("--progress", "0%");
+      });
+
+      processSteps.forEach((step) => {
+        step.style.setProperty("--progress", "0%");
+      });
+    }
+
+    function runTimedProcess(duration, token) {
+      const start = performance.now();
+      processTimer = window.setTimeout(() => {
+        if (token !== processToken) return;
+        setProcessProgress(processIndex, 1);
+        activateProcessStep(processIndex + 1);
+      }, duration * 1000);
+
+      function tick(now) {
+        if (token !== processToken) return;
+        const progress = Math.min((now - start) / (duration * 1000), 1);
+        setProcessProgress(processIndex, progress);
+
+        if (progress >= 1) {
+          return;
+        }
+
+        processFrame = requestAnimationFrame(tick);
+      }
+
+      processFrame = requestAnimationFrame(tick);
+    }
+
+    function runVideoProcess(source, fallbackImage, duration, token) {
+      if (!systemVideo || !systemPreview || !source) {
+        runTimedProcess(duration, token);
+        return;
+      }
+
+      let finished = false;
+      let progressStarted = false;
+      let expectedDuration = duration;
+      let startedAt = 0;
+
+      function cleanup() {
+        systemVideo.removeEventListener("ended", complete);
+        systemVideo.removeEventListener("error", fallback);
+        systemVideo.removeEventListener("loadedmetadata", startProgress);
+      }
+
+      function complete() {
+        if (finished || token !== processToken) return;
+        finished = true;
+        setProcessProgress(processIndex, 1);
+        activateProcessStep(processIndex + 1);
+      }
+
+      function fallback() {
+        if (finished || token !== processToken) return;
+        finished = true;
+        cleanup();
+        systemVideo.pause();
+        systemVideo.removeAttribute("src");
+        systemVideo.load();
+        systemPreview.classList.remove("is-video");
+        if (systemPreviewImage && fallbackImage) systemPreviewImage.src = fallbackImage;
+        runTimedProcess(duration, token);
+      }
+
+      function progressFromVideo() {
+        if (token !== processToken || finished) return;
+        const videoProgress = systemVideo.currentTime / expectedDuration;
+        const timedProgress = (performance.now() - startedAt) / (expectedDuration * 1000);
+        const progress = Math.max(videoProgress, timedProgress);
+        setProcessProgress(processIndex, progress);
+        if (progress >= 1) {
+          complete();
+          return;
+        }
+        processFrame = requestAnimationFrame(progressFromVideo);
+      }
+
+      function startProgress() {
+        if (token !== processToken || finished) return;
+        if (progressStarted) return;
+        progressStarted = true;
+        expectedDuration = Number.isFinite(systemVideo.duration) && systemVideo.duration > 0
+          ? systemVideo.duration
+          : duration;
+        startedAt = performance.now();
+        processTimer = window.setTimeout(complete, expectedDuration * 1000 + 80);
+        processFrame = requestAnimationFrame(progressFromVideo);
+      }
+
+      cleanup();
+      processVideoCleanup = cleanup;
+      if (systemPreviewImage && fallbackImage) systemPreviewImage.src = fallbackImage;
+      systemPreview.classList.add("is-video");
+      systemVideo.muted = true;
+      systemVideo.playsInline = true;
+      systemVideo.src = source;
+      systemVideo.currentTime = 0;
+      systemVideo.addEventListener("ended", complete);
+      systemVideo.addEventListener("error", fallback);
+      systemVideo.addEventListener("loadedmetadata", startProgress);
+
+      systemVideo.play().then(startProgress).catch(fallback);
+    }
+
+    function activateProcessStep(nextIndex) {
+      if (!processSteps.length) return;
+      clearProcessPlayback();
+      processToken += 1;
+      const token = processToken;
+      processIndex = (nextIndex + processSteps.length) % processSteps.length;
+      renderProcessState(processIndex);
+
+      const step = processSteps[processIndex];
+      const duration = Number(step.dataset.duration) || 5.2;
+      const fallbackImage = step.dataset.poster || systemPreviewImage?.getAttribute("src") || "assets/system-preview.png";
+      const mediaSource = step.dataset.media;
+
+      if (systemPreview && !mediaSource) systemPreview.classList.remove("is-video");
+      if (systemPreviewImage && fallbackImage) systemPreviewImage.src = fallbackImage;
+
+      if (mediaSource) {
+        runVideoProcess(mediaSource, fallbackImage, duration, token);
+      } else {
+        runTimedProcess(duration, token);
+      }
+    }
+
+    processSteps.forEach((step, index) => {
+      step.setAttribute("role", "button");
+      step.setAttribute("tabindex", "0");
+
+      step.addEventListener("click", () => {
+        activateProcessStep(index);
+      });
+
+      step.addEventListener("keydown", (event) => {
+        if (event.key !== "Enter" && event.key !== " ") return;
+        event.preventDefault();
+        activateProcessStep(index);
+      });
+    });
+
     function setPhrase(text) {
       typeText.textContent = text;
     }
@@ -1566,8 +1784,8 @@
     shimmer.className = "shimmer";
     shimmer.setAttribute("aria-hidden", "true");
 
-    // spiral star trail: two layers — back (behind the chars) and front (in front) —
-    // hold the trail stars; the sine path itself is invisible, just the trajectory.
+    // spiral sparkle trail: two layers — back (behind the chars) and front (in front) —
+    // hold the trail shapes; the sine path itself is invisible, just the trajectory.
     const trailBack = document.createElement("div");
     trailBack.className = "trail-layer trail-back";
     trailBack.setAttribute("aria-hidden", "true");
@@ -1604,17 +1822,17 @@
       return { x: a.x + (b.x - a.x) * r, y: a.y + (b.y - a.y) * r, front: r < 0.5 ? a.front : b.front };
     }
 
-    // The emit point sweeps the spiral (synced to `dur`), dropping stars as it goes.
-    // Each dropped star stays where it landed and fades out on ITS OWN over `fadeDur`,
-    // so the trail dissolves star-by-star — the per-star fade is the slow disappearance.
+    // The emit point sweeps the spiral (synced to `dur`), dropping Union.svg shapes as it goes.
+    // Each dropped shape stays where it landed and fades out on ITS OWN over `fadeDur`,
+    // so the trail dissolves shape-by-shape — the per-shape fade is the slow disappearance.
     function runSpiralTrail(chars, dur) {
       trailBack.replaceChildren();
       trailFront.replaceChildren();
       if (reduceMotion) return;
       const pts = computeSpiral(chars);
       if (!pts.length) return;
-      const emitStep = CONFIG.trail.density;  // drop a star every N of the path (smaller = denser)
-      const fadeDur = CONFIG.trail.fadeOut;   // how long EACH star takes to fade out (bigger = slower)
+      const emitStep = CONFIG.trail.density;  // drop a shape every N of the path (smaller = denser)
+      const fadeDur = CONFIG.trail.fadeOut;   // how long EACH shape takes to fade out (bigger = slower)
       const proxy = { p: 0 };
       let nextEmit = 0;
       gsap.to(proxy, {
@@ -1628,10 +1846,15 @@
             const el = document.createElement("span");
             el.className = "sparkle";
             (pt.front ? trailFront : trailBack).appendChild(el);   // weave in front / behind text
-            const sc = gsap.utils.random(0.55, 1.1);
+            const minScale = Math.max(0.1, CONFIG.trail.size * (1 - CONFIG.trail.sizeRandom));
+            const maxScale = CONFIG.trail.size * (1 + CONFIG.trail.sizeRandom);
+            const sc = gsap.utils.random(minScale, maxScale);
+            const minOpacity = Math.max(0, CONFIG.trail.opacity * (1 - CONFIG.trail.opacityRandom));
+            const maxOpacity = Math.min(1, CONFIG.trail.opacity * (1 + CONFIG.trail.opacityRandom));
+            const peakOpacity = gsap.utils.random(minOpacity, maxOpacity);
             gsap.set(el, { x: pt.x, y: pt.y, scale: sc, rotation: gsap.utils.random(-40, 40), opacity: 0 });
             gsap.timeline({ onComplete: () => el.remove() })
-              .to(el, { opacity: 1, duration: 0.12, ease: "power1.out" }, 0)
+              .to(el, { opacity: peakOpacity, duration: 0.12, ease: "power1.out" }, 0)
               .to(el, { opacity: 0, scale: sc * 0.55, y: pt.y - gsap.utils.random(2, 9), duration: fadeDur, ease: "power1.in" }, 0.1);
           }
         },
@@ -1746,7 +1969,7 @@
     function applyGradient(index) {
       const grad = slides[normalizedIndex(index)].gradient;
       typeText.style.setProperty("--title-grad", grad);
-      // the gradient's last colour is the card accent — match the trail stars to it
+      // the gradient's last colour is the card accent — match the trail shapes to it
       const accent = (grad.match(/#[0-9a-fA-F]{6}(?=[^#]*$)/) || ["#6aa8ff"])[0];
       typeText.style.setProperty("--accent", accent);
     }
@@ -1807,11 +2030,15 @@
       fs.addInput(CONFIG.shimmer, "enabled", { label: "enabled" });
       fs.addInput(CONFIG.shimmer, "duration", { min: 0.3, max: 1.5, step: 0.05, label: "sweep (s)" });
 
-      const fr = pane.addFolder({ title: "螺旋星轨 Spiral trail" });
+      const fr = pane.addFolder({ title: "异形轨迹 Shape trail" });
       fr.addInput(CONFIG.trail, "enabled", { label: "enabled" });
       fr.addInput(CONFIG.trail, "density", { min: 0.02, max: 0.12, step: 0.005, label: "spacing (↓ denser)" });
-      fr.addInput(CONFIG.trail, "fadeOut", { min: 0.2, max: 1.5, step: 0.05, label: "star fade (s)" });
+      fr.addInput(CONFIG.trail, "fadeOut", { min: 0.2, max: 1.5, step: 0.05, label: "shape fade (s)" });
       fr.addInput(CONFIG.trail, "amplitude", { min: 10, max: 60, step: 2, label: "loop height (px)" });
+      fr.addInput(CONFIG.trail, "size", { min: 0.3, max: 2, step: 0.05, label: "shape size" });
+      fr.addInput(CONFIG.trail, "sizeRandom", { min: 0, max: 0.9, step: 0.05, label: "size randomness" });
+      fr.addInput(CONFIG.trail, "opacity", { min: 0.1, max: 1, step: 0.05, label: "shape opacity" });
+      fr.addInput(CONFIG.trail, "opacityRandom", { min: 0, max: 0.9, step: 0.05, label: "opacity randomness" });
 
       const fl = pane.addFolder({ title: "切换 Switching" });
       fl.addInput(CONFIG.loop, "hold", { min: 0.5, max: 5, step: 0.1, label: "hold per phrase (s)" });
@@ -1824,8 +2051,9 @@
 
     updateCompactTabs();
     renderTabButtons();
+    activateProcessStep(0);
     window.addEventListener("scroll", requestCompactTabsUpdate, { passive: true });
     window.addEventListener("resize", requestCompactTabsUpdate);
-  </script>
+</script>
 </body>
 </html>
