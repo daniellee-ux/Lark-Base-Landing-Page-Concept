@@ -659,7 +659,7 @@
     .compact-tabs-inner {
       position: relative;
       width: min(1378px, calc(100% - 72px));
-      height: 60px;
+      height: 48px;
       display: grid;
       grid-template-columns: repeat(5, 254px);
       gap: 27px;
@@ -667,31 +667,141 @@
     }
 
     .compact-tab {
+      --tab-accent: 198, 163, 255;
+      --tab-selected-text: #e0ceff;
+      --tab-fill-alpha: 0.1;
+      --tab-linear-alpha: 0.3;
       position: relative;
       min-width: 0;
-      height: 60px;
+      width: 254px;
+      height: 48px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 10px;
       overflow: hidden;
       border: 0;
-      border-radius: 14px;
+      border-radius: 8px;
       padding: 0;
-      background: transparent;
-      color: rgba(235, 235, 235, 0.68);
-      font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
-      font-size: 15px;
-      font-weight: 500;
+      background: #0a0a0a;
+      color: #ebebeb;
+      font-family: "PingFang SC", "Microsoft YaHei", -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 16px;
+      font-weight: 400;
       line-height: 22px;
+      letter-spacing: 0;
+      text-align: center;
+      white-space: nowrap;
       text-decoration: none;
       cursor: pointer;
+      box-shadow: none;
+      outline: 0;
+      isolation: isolate;
       transition:
+        background-color 180ms ease,
+        color 220ms ease,
+        box-shadow 220ms ease,
         transform 180ms ease;
     }
 
+    .compact-tab-label {
+      position: relative;
+      z-index: 2;
+      width: 116px;
+      display: block;
+    }
+
+    .compact-tab::before,
+    .compact-tab::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 220ms ease;
+    }
+
     .compact-tab::before {
-      display: none;
+      z-index: 0;
+      padding: 1px;
+      background: radial-gradient(
+        ellipse 95% 220% at 50% 28%,
+        rgba(var(--tab-accent), 1) 0%,
+        rgba(var(--tab-accent), 0.62) 24%,
+        rgba(var(--tab-accent), 0.24) 52%,
+        rgba(0, 0, 0, 0) 100%
+      );
+      -webkit-mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+      -webkit-mask-composite: xor;
+      mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+      mask-composite: exclude;
+    }
+
+    .compact-tab::after {
+      inset: 1px;
+      z-index: 1;
+      border-radius: 7px;
+      background:
+        linear-gradient(180deg, rgba(91, 91, 91, 0) 0%, rgba(52, 52, 52, var(--tab-linear-alpha)) 100%),
+        rgba(var(--tab-accent), var(--tab-fill-alpha));
+      mix-blend-mode: plus-lighter;
+    }
+
+    .compact-tab:hover {
+      background: #181818;
+    }
+
+    .compact-tab[aria-pressed="true"] {
+      background: #0a0a0a;
+      color: var(--tab-selected-text);
+      box-shadow:
+        0 2.402px 4.805px -4.805px rgba(31, 35, 41, 0.02),
+        0 4.805px 9.609px 0 rgba(31, 35, 41, 0.02),
+        0 4.805px 19.219px 4.805px rgba(31, 35, 41, 0.03);
+    }
+
+    .compact-tab[aria-pressed="true"]::before,
+    .compact-tab[aria-pressed="true"]::after {
+      opacity: 1;
+    }
+
+    .compact-tab.theme-system {
+      --tab-accent: 198, 163, 255;
+      --tab-selected-text: #e0ceff;
+      --tab-fill-alpha: 0.1;
+      --tab-linear-alpha: 0.3;
+    }
+
+    .compact-tab.theme-table {
+      --tab-accent: 245, 186, 142;
+      --tab-selected-text: #deb698;
+      --tab-fill-alpha: 0.1;
+      --tab-linear-alpha: 0.2;
+    }
+
+    .compact-tab.theme-workflow {
+      --tab-accent: 111, 240, 145;
+      --tab-selected-text: #85d69b;
+      --tab-fill-alpha: 0.1;
+      --tab-linear-alpha: 0.3;
+    }
+
+    .compact-tab.theme-dashboard {
+      --tab-accent: 128, 162, 244;
+      --tab-selected-text: #80a2f4;
+      --tab-fill-alpha: 0.1;
+      --tab-linear-alpha: 0.3;
+    }
+
+    .compact-tab.theme-qa {
+      --tab-accent: 247, 142, 227;
+      --tab-selected-text: #d4a1ca;
+      --tab-fill-alpha: 0.1;
+      --tab-linear-alpha: 0.3;
     }
 
     .compact-tab:active {
@@ -717,8 +827,7 @@
       cursor: pointer;
     }
 
-    .tab-card-image,
-    .compact-tab-image {
+    .tab-card-image {
       width: 100%;
       height: 100%;
       display: block;
@@ -731,14 +840,16 @@
       border-radius: 16px;
     }
 
-    .compact-tab-image {
-      border-radius: 14px;
-    }
-
-    .ai-tab-card:focus-visible,
-    .compact-tab:focus-visible {
+    .ai-tab-card:focus-visible {
       outline: 2px solid rgba(80, 131, 251, 0.72);
       outline-offset: 4px;
+    }
+
+    .compact-tab:focus-visible {
+      outline: none;
+      box-shadow:
+        0 0 0 2px rgba(var(--tab-accent), 0.32),
+        0 0 0 5px rgba(var(--tab-accent), 0.12);
     }
 
     .build-system {
@@ -948,6 +1059,10 @@
     .process-step > div {
       width: 100%;
       min-width: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
     }
 
     .process-step.active {
@@ -967,19 +1082,24 @@
 
     .process-step h3 {
       font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
-      font-size: 20px;
-      font-weight: 600;
-      line-height: 1.25;
+      font-size: 18px;
+      font-weight: 500;
+      line-height: 22px;
       white-space: nowrap;
+      color: currentColor;
     }
 
     .process-step p {
-      width: min(210px, 100%);
-      margin-top: 10px;
+      width: min(180px, 100%);
+      margin: 0 auto;
       font-size: 14px;
       font-weight: 400;
       line-height: 22px;
       color: currentColor;
+    }
+
+    .process-step.active p {
+      color: #a6a6a6;
     }
 
     @media (max-width: 1180px) {
@@ -1097,7 +1217,7 @@
 
       .compact-tabs-inner {
         width: calc(100% - 24px);
-        height: 60px;
+        height: 48px;
         display: flex;
         justify-content: flex-start;
         overflow-x: auto;
@@ -1110,14 +1230,9 @@
       }
 
       .compact-tab {
-        flex: 0 0 206px;
-        height: 60px;
-        font-size: 13px;
-      }
-
-      .compact-tab-image {
-        width: 100%;
-        height: 100%;
+        flex: 0 0 254px;
+        height: 48px;
+        font-size: 16px;
       }
 
       .tab-grid {
@@ -1288,20 +1403,20 @@
 
   <nav class="compact-tabs" aria-label="AI capability quick navigation" aria-hidden="true">
     <div class="compact-tabs-inner">
-      <button class="compact-tab active" type="button" data-tab="system" aria-label="AI 搭建系统" aria-pressed="true">
-        <img class="compact-tab-image tab-state-image" src="assets/tab-sticky-system-active.png" alt="" data-src-default="assets/tab-sticky-system-default.png" data-src-hover="assets/tab-sticky-system-hover.png" data-src-active="assets/tab-sticky-system-active.png" />
+      <button class="compact-tab theme-system active" type="button" data-tab="system" aria-label="AI 搭建系统" aria-pressed="true">
+        <span class="compact-tab-label">AI 搭建系统</span>
       </button>
-      <button class="compact-tab" type="button" data-tab="table" aria-label="数据表 AI" aria-pressed="false">
-        <img class="compact-tab-image tab-state-image" src="assets/tab-sticky-table-default.png" alt="" data-src-default="assets/tab-sticky-table-default.png" data-src-hover="assets/tab-sticky-table-hover.png" data-src-active="assets/tab-sticky-table-active.png" />
+      <button class="compact-tab theme-table" type="button" data-tab="table" aria-label="数据表 AI" aria-pressed="false">
+        <span class="compact-tab-label">数据表 AI</span>
       </button>
-      <button class="compact-tab" type="button" data-tab="workflow" aria-label="工作流 AI" aria-pressed="false">
-        <img class="compact-tab-image tab-state-image" src="assets/tab-sticky-workflow-default.png" alt="" data-src-default="assets/tab-sticky-workflow-default.png" data-src-hover="assets/tab-sticky-workflow-hover.png" data-src-active="assets/tab-sticky-workflow-active.png" />
+      <button class="compact-tab theme-workflow" type="button" data-tab="workflow" aria-label="工作流 AI" aria-pressed="false">
+        <span class="compact-tab-label">工作流 AI</span>
       </button>
-      <button class="compact-tab" type="button" data-tab="dashboard" aria-label="AI 仪表盘" aria-pressed="false">
-        <img class="compact-tab-image tab-state-image" src="assets/tab-sticky-dashboard-default.png" alt="" data-src-default="assets/tab-sticky-dashboard-default.png" data-src-hover="assets/tab-sticky-dashboard-hover.png" data-src-active="assets/tab-sticky-dashboard-active.png" />
+      <button class="compact-tab theme-dashboard" type="button" data-tab="dashboard" aria-label="AI 仪表盘" aria-pressed="false">
+        <span class="compact-tab-label">AI 仪表盘</span>
       </button>
-      <button class="compact-tab" type="button" data-tab="qa" aria-label="AI 问数" aria-pressed="false">
-        <img class="compact-tab-image tab-state-image" src="assets/tab-sticky-qa-default.png" alt="" data-src-default="assets/tab-sticky-qa-default.png" data-src-hover="assets/tab-sticky-qa-hover.png" data-src-active="assets/tab-sticky-qa-active.png" />
+      <button class="compact-tab theme-qa" type="button" data-tab="qa" aria-label="AI 问数" aria-pressed="false">
+        <span class="compact-tab-label">AI 问数</span>
       </button>
     </div>
   </nav>
