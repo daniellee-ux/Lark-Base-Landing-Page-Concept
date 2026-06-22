@@ -1102,56 +1102,32 @@
       color: #a6a6a6;
     }
 
-    @media (max-width: 1180px) {
-      .nav-inner {
-        width: calc(100% - 48px);
-      }
-
-      .nav-left {
-        gap: 38px;
-      }
-
-      .nav-links {
-        gap: 24px;
-        font-size: 14px;
-      }
-
-      .nav-user {
-        gap: 18px;
-      }
-
-      .headline h1 {
-        font-size: 56px;
-      }
-
+    @media (max-width: 999px) {
+      /* tablet + mobile (<=999px): KEEP the carousel, but scale it down (0.62) and
+         SIZE the showcase to the scaled card height, so no empty black band is
+         reserved below the cards. The cards are position:absolute + transform:scale,
+         so they add 0 layout height and can't drive the showcase height themselves —
+         hence the explicit height + transform-origin:top center below. */
       .showcase {
-        max-width: calc(100% - 48px);
+        height: 187px;        /* 20px top offset + 269px card height * 0.62 scale */
+        margin-top: 28px;
+      }
+
+      .hero {
+        min-height: auto;     /* stop reserving desktop hero height -> no hero void */
       }
 
       .cards {
-        transform: translateX(-50%) scale(0.9);
-        transform-origin: top center;
+        transform: translateX(-50%) scale(0.62);
+        transform-origin: top center;   /* anchor scaling at the top so slack can't collect below */
       }
 
-      .tab-grid {
-        grid-template-columns: repeat(5, 254px);
-        overflow: hidden;
+      .cards::after {
+        display: none;        /* desktop edge-fade renders as a dark box over the scaled row */
       }
 
-      .compact-tabs-inner {
-        width: min(1378px, calc(100% - 72px));
-        grid-template-columns: repeat(5, 254px);
-        overflow: hidden;
-      }
-
-      .logo-strip {
-        transform: translateX(-50%) scale(0.78);
-      }
-    }
-
-    @media (max-width: 780px) {
-      .hero {
-        min-height: 760px;
+      .fade {
+        display: none;        /* the two fixed 298px fade bars overlap into a black wash when narrow */
       }
 
       .nav-inner {
@@ -1186,21 +1162,6 @@
 
       .hero-button {
         margin-top: 38px;
-      }
-
-      .showcase {
-        height: 300px;
-        margin-top: 28px;
-      }
-
-      .cards {
-        transform: translateX(-50%) scale(0.62);
-      }
-
-      .cards::after {
-        /* desktop edge-fade for the wide card row; on the scaled mobile row it
-           renders as a dark box over the hero card, so drop it */
-        display: none;
       }
 
       .logo-wall {
@@ -1320,20 +1281,11 @@
     }
 
     @media (max-width: 599.98px) {
-      /* < 600px: drop the tab strip entirely — image cards + collapsable bar */
+      /* mobile (<600px): also hide the capability tab strip (image cards +
+         collapsable bar). The showcase/hero collapse is inherited from <=999px. */
       .ai-tabs,
       .compact-tabs {
         display: none;
-      }
-
-      /* < 600px: the carousel is scaled to 0.62, so the desktop-sized hero/showcase
-         box left a tall black gap below the cards. Size both to the actual content. */
-      .hero {
-        min-height: auto;
-      }
-
-      .showcase {
-        height: 220px;
       }
     }
 
