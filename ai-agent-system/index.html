@@ -1197,6 +1197,12 @@
         transform: translateX(-50%) scale(0.62);
       }
 
+      .cards::after {
+        /* desktop edge-fade for the wide card row; on the scaled mobile row it
+           renders as a dark box over the hero card, so drop it */
+        display: none;
+      }
+
       .logo-wall {
         height: 132px;
       }
@@ -1318,6 +1324,16 @@
       .ai-tabs,
       .compact-tabs {
         display: none;
+      }
+
+      /* < 600px: the carousel is scaled to 0.62, so the desktop-sized hero/showcase
+         box left a tall black gap below the cards. Size both to the actual content. */
+      .hero {
+        min-height: auto;
+      }
+
+      .showcase {
+        height: 220px;
       }
     }
 
