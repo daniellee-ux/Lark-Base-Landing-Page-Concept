@@ -517,7 +517,7 @@
       /* width scales with the carousel so the two side bars never overlap on narrow
          screens; solid #000 at the page edge -> transparent toward the centre, so the
          left/right cards fade out exactly at the page borders. */
-      width: max(48px, calc((100% - var(--cards-scale, 1) * 430px) / 2));
+      width: max(48px, calc((100% - var(--cards-scale, 1) * 780px) / 2));
       pointer-events: none;
     }
 
@@ -1115,10 +1115,79 @@
       color: #a6a6a6;
     }
 
+    @media (max-width: 999px) {
+      /* tablet (600-999): the carousel is fluid (base styles + JS setCardsScale); these
+         rules fit the rest of the chrome to a tablet so nothing overflows or crops.
+         Mobile (<600) overrides some of these below. */
+      .nav-links,
+      .user-name {
+        display: none;            /* the full nav doesn't fit a tablet -> logo + CTA only */
+      }
+
+      .headline h1 {
+        font-size: 56px;
+      }
+
+      .logo-strip {
+        transform: translateX(-50%) scale(0.78);
+      }
+
+      /* sticky capability bar: let the 5 tabs scroll horizontally instead of clipping */
+      .compact-tabs-inner {
+        width: calc(100% - 48px);
+        display: flex;
+        justify-content: flex-start;
+        overflow-x: auto;
+        gap: 12px;
+        scrollbar-width: none;
+      }
+
+      .compact-tabs-inner::-webkit-scrollbar {
+        display: none;
+      }
+
+      .compact-tab {
+        flex: 0 0 254px;
+      }
+
+      /* build-system: the fixed-width desktop process panel must collapse to fit */
+      .process-bars,
+      .process-active {
+        display: none;
+      }
+
+      .process-steps {
+        left: 0;
+        width: 100%;
+        height: 260px;
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .process-step {
+        padding: 22px 16px;
+      }
+
+      .process-step.active::before {
+        left: 0;
+        width: 100%;
+      }
+
+      .process-step h3 {
+        font-size: 16px;
+      }
+
+      .process-step p {
+        width: auto;
+        font-size: 12px;
+        line-height: 18px;
+      }
+    }
+
     @media (max-width: 599.98px) {
       /* mobile only (<600). Per the mobile design, the carousel shows ONLY the centre
-         card; the side cards are NOT scaled down — they sit full-size just off-screen
-         so only their edge/border peeks in at the page borders. */
+         card; the side cards keep scale(1) locally (the carousel's --cards-scale still
+         applies via the parent .cards), so only their edge/border peeks in at the
+         page borders. */
       .panel.is-side {
         opacity: 1;
       }
@@ -1244,7 +1313,7 @@
 
     @media (max-width: 599.98px) {
       /* mobile (<600px): also hide the capability tab strip (image cards +
-         collapsable bar). The showcase/hero collapse is inherited from <=999px. */
+         collapsable bar). The carousel itself is fluid in the base styles. */
       .ai-tabs,
       .compact-tabs {
         display: none;
@@ -2128,6 +2197,7 @@
     }
     setCardsScale();
     window.addEventListener("resize", setCardsScale, { passive: true });
+    window.addEventListener("orientationchange", setCardsScale);
 </script>
 </body>
 </html>
