@@ -396,7 +396,8 @@
          lands on the true page edges. */
       --cards-scale: 1;   /* default (desktop); recomputed fluidly by JS (setCardsScale) on load + resize */
       width: 100%;
-      max-width: none;
+      max-width: 1376px;  /* cap content width on PC (matches .nav-inner); below 1376 it is
+                             full-width so the edge-fade still reaches the page borders */
       height: calc(20px + 330px * var(--cards-scale));
       margin: 19px auto 0;
     }
