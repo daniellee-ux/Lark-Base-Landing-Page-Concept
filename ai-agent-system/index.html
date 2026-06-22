@@ -1313,6 +1313,14 @@
       }
     }
 
+    @media (max-width: 599.98px) {
+      /* < 600px: drop the tab strip entirely — image cards + collapsable bar */
+      .ai-tabs,
+      .compact-tabs {
+        display: none;
+      }
+    }
+
     @media (prefers-reduced-motion: reduce) {
       .panel {
         transition: none;
