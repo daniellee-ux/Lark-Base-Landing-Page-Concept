@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Collapsed Tab Button</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html,
+    body {
+      min-height: 100%;
+      background: #000;
+      font-family: "PingFang SC", "Microsoft YaHei", -apple-system, BlinkMacSystemFont, sans-serif;
+      color: #ebebeb;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: geometricPrecision;
+    }
+
+    body {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      overflow: auto;
+    }
+
+    .stage {
+      width: 100%;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 40px;
+      background: #000;
+    }
+
+    .collapsed-tabs {
+      display: grid;
+      grid-template-columns: repeat(5, 254px);
+      gap: 27px;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .collapsed-tab {
+      --tab-accent: 198, 163, 255;
+      --tab-selected-text: #e0ceff;
+      --tab-fill-alpha: 0.1;
+      --tab-linear-alpha: 0.3;
+      position: relative;
+      width: 254px;
+      height: 48px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      border: 0;
+      border-radius: 8px;
+      padding: 0;
+      background: #0a0a0a;
+      color: #ebebeb;
+      font-family: "PingFang SC", "Microsoft YaHei", -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 16px;
+      font-weight: 400;
+      line-height: 22px;
+      letter-spacing: 0;
+      text-align: center;
+      white-space: nowrap;
+      cursor: pointer;
+      box-shadow: none;
+      outline: 0;
+      isolation: isolate;
+      transition:
+        background-color 180ms ease,
+        color 220ms ease,
+        transform 160ms ease,
+        box-shadow 220ms ease;
+    }
+
+    .collapsed-tab-label {
+      position: relative;
+      z-index: 2;
+      width: 116px;
+      display: block;
+    }
+
+    .collapsed-tab::before,
+    .collapsed-tab::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 220ms ease;
+    }
+
+    .collapsed-tab::before {
+      z-index: 0;
+      padding: 1px;
+      background: radial-gradient(
+        ellipse 95% 220% at 50% 28%,
+        rgba(var(--tab-accent), 1) 0%,
+        rgba(var(--tab-accent), 0.62) 24%,
+        rgba(var(--tab-accent), 0.24) 52%,
+        rgba(0, 0, 0, 0) 100%
+      );
+      -webkit-mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+      -webkit-mask-composite: xor;
+      mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+      mask-composite: exclude;
+    }
+
+    .collapsed-tab::after {
+      inset: 1px;
+      z-index: 1;
+      border-radius: 7px;
+      background:
+        linear-gradient(180deg, rgba(91, 91, 91, 0) 0%, rgba(52, 52, 52, var(--tab-linear-alpha)) 100%),
+        rgba(var(--tab-accent), var(--tab-fill-alpha));
+      mix-blend-mode: plus-lighter;
+    }
+
+    .collapsed-tab:hover {
+      background: #181818;
+    }
+
+    .collapsed-tab[aria-pressed="true"] {
+      background: #0a0a0a;
+      color: var(--tab-selected-text);
+      box-shadow:
+        0 2.402px 4.805px -4.805px rgba(31, 35, 41, 0.02),
+        0 4.805px 9.609px 0 rgba(31, 35, 41, 0.02),
+        0 4.805px 19.219px 4.805px rgba(31, 35, 41, 0.03);
+    }
+
+    .collapsed-tab[aria-pressed="true"]::before,
+    .collapsed-tab[aria-pressed="true"]::after {
+      opacity: 1;
+    }
+
+    .collapsed-tab:active {
+      transform: translate3d(0, 1px, 0);
+    }
+
+    .collapsed-tab:focus-visible {
+      box-shadow:
+        0 0 0 2px rgba(var(--tab-accent), 0.32),
+        0 0 0 5px rgba(var(--tab-accent), 0.12);
+    }
+
+    .collapsed-tab.theme-system {
+      --tab-accent: 198, 163, 255;
+      --tab-selected-text: #e0ceff;
+      --tab-fill-alpha: 0.1;
+      --tab-linear-alpha: 0.3;
+    }
+
+    .collapsed-tab.theme-table {
+      --tab-accent: 245, 186, 142;
+      --tab-selected-text: #deb698;
+      --tab-fill-alpha: 0.1;
+      --tab-linear-alpha: 0.2;
+    }
+
+    .collapsed-tab.theme-workflow {
+      --tab-accent: 111, 240, 145;
+      --tab-selected-text: #85d69b;
+      --tab-fill-alpha: 0.1;
+      --tab-linear-alpha: 0.3;
+    }
+
+    .collapsed-tab.theme-dashboard {
+      --tab-accent: 128, 162, 244;
+      --tab-selected-text: #80a2f4;
+      --tab-fill-alpha: 0.1;
+      --tab-linear-alpha: 0.3;
+    }
+
+    .collapsed-tab.theme-qa {
+      --tab-accent: 247, 142, 227;
+      --tab-selected-text: #d4a1ca;
+      --tab-fill-alpha: 0.1;
+      --tab-linear-alpha: 0.3;
+    }
+  </style>
+</head>
+<body>
+  <main class="stage">
+    <div class="collapsed-tabs" role="tablist" aria-label="Collapsed AI tabs">
+      <button class="collapsed-tab theme-system" type="button" role="tab" aria-selected="false" aria-pressed="false" data-tab="system">
+        <span class="collapsed-tab-label">AI 搭建系统</span>
+      </button>
+      <button class="collapsed-tab theme-table" type="button" role="tab" aria-selected="true" aria-pressed="true" data-tab="table">
+        <span class="collapsed-tab-label">数据表 AI</span>
+      </button>
+      <button class="collapsed-tab theme-workflow" type="button" role="tab" aria-selected="false" aria-pressed="false" data-tab="workflow">
+        <span class="collapsed-tab-label">工作流 AI</span>
+      </button>
+      <button class="collapsed-tab theme-dashboard" type="button" role="tab" aria-selected="false" aria-pressed="false" data-tab="dashboard">
+        <span class="collapsed-tab-label">AI 仪表盘</span>
+      </button>
+      <button class="collapsed-tab theme-qa" type="button" role="tab" aria-selected="false" aria-pressed="false" data-tab="qa">
+        <span class="collapsed-tab-label">AI 问数</span>
+      </button>
+    </div>
+  </main>
+
+  <script>
+    const buttons = Array.from(document.querySelectorAll(".collapsed-tab"));
+    const params = new URLSearchParams(window.location.search);
+    const initialTab = params.get("tab") || (params.get("state") === "selected" ? "table" : "table");
+
+    function setActiveTab(tabId) {
+      buttons.forEach((button) => {
+        const isActive = button.dataset.tab === tabId;
+        button.setAttribute("aria-selected", String(isActive));
+        button.setAttribute("aria-pressed", String(isActive));
+      });
+    }
+
+    buttons.forEach((button) => {
+      button.addEventListener("click", () => {
+        setActiveTab(button.dataset.tab);
+      });
+    });
+
+    setActiveTab(initialTab);
+  </script>
+</body>
+</html>
